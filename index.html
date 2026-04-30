@@ -252,6 +252,16 @@ function setPlay(on) {
 }
 
 function render() {
+  /* Bars|Beats:
+       reg[0]=beat-ones  reg[1]=bar-ones  reg[2]=bar-tens
+       reg[3]=bar-hundreds  reg[4]=bar-thousands
+     Mins:Secs (same register, different semantics):
+       reg[0]=sec-units  reg[1]=sec-tens  reg[2]=min-units
+       reg[3]=min-tens   reg[4]=hour-units */
+
+  /* Bars|Beats display
+     reg[0]=beat(1-9)  reg[1]=bar-ones(0-9)  reg[2]=bar-tens(0-9)
+     reg[3]=bar-hundreds(0-9)  reg[4]=bar-thousands(0-9) */
   var bars = reg[1] + reg[2]*10 + reg[3]*100 + reg[4]*1000;
   var beat = reg[0];
   if (bars < 1) bars = 1;
@@ -259,21 +269,53 @@ function render() {
   document.getElementById('d-bars').textContent  = pad(bars, 3);
   document.getElementById('d-beat').textContent  = String(beat);
   document.getElementById('d-ticks').textContent = '000';
+
+  /* Mins:Secs display
+     reg[0]=sec-units(0-9)  reg[1]=sec-tens(0-5)   reg[2]=min-units(0-9)
+     reg[3]=min-tens(0-9)   reg[4]=min-hundreds(0-9) */
+  var secs = reg[0] + reg[1]*10;
+  var mins = reg[2] + reg[3]*10 + reg[4]*100;
+  document.getElementById('d-mo').textContent  = pad(mins, 2);
+  document.getElementById('d-so').textContent  = pad(secs, 2);
+  document.getElementById('d-ms2').textContent = '000';
 }
 
 /* ─── Decode one counter byte at a given position ─── */
 function decodeCounterByte(b, pos) {
   if (pos === 0) {
-    /* beat ones: offset encoded, 0x11=1 .. 0x19=9 */
-    if (b >= 0x11 && b <= 0x19) return b - 0x10;
-    return -1; /* invalid */
-  }
-  if (pos === 1) {
-    /* bar ones: offset encoded, 0x10=0 .. 0x19=9 */
+    /* Bars: beat-ones  (offset 0x10-0x19)
+       Mins: sec-units  (offset 0x10-0x19) */
     if (b >= 0x10 && b <= 0x19) return b - 0x10;
     return -1;
   }
-  /* pos >= 2: bar tens/hundreds/thousands — raw digit 0x00-0x09 */
+  if (pos === 1) {
+    /* Bars: bar-ones   (offset 0x10-0x19)
+       Mins: sec-tens   (raw    0x00-0x09) — non-overlapping, accept both */
+    if (b >= 0x10 && b <= 0x19) return b - 0x10;
+    if (b >= 0x00 && b <= 0x09) return b;
+    return -1;
+  }
+  if (pos === 2) {
+    /* Bars: bar-tens   (raw    0x00-0x09)
+       Mins: min-units  (offset 0x10-0x19) — non-overlapping, accept both */
+    if (b >= 0x10 && b <= 0x19) return b - 0x10;
+    if (b >= 0x00 && b <= 0x09) return b;
+    return -1;
+  }
+  if (pos === 3) {
+    /* Bars: bar-hundreds (raw    0x00-0x09)
+       Mins: min-tens     (raw    0x00-0x09) */
+    if (b >= 0x00 && b <= 0x09) return b;
+    return -1;
+  }
+  if (pos === 4) {
+    /* Bars: bar-thousands (raw    0x00-0x09)
+       Mins: min-hundreds  (offset 0x10-0x19) — non-overlapping, accept both */
+    if (b >= 0x10 && b <= 0x19) return b - 0x10;
+    if (b >= 0x00 && b <= 0x09) return b;
+    return -1;
+  }
+  /* pos >= 5: raw */
   if (b >= 0x00 && b <= 0x09) return b;
   return -1;
 }
@@ -312,7 +354,14 @@ function parseHui(data) {
      Zero register positions above what was sent to clear stale high digits.
      Single-byte beat-only messages never trigger a reset. */
   var ticksAllZero = (payload[0]===0x00 && payload[1]===0x00 && payload[2]===0x00);
-  if (decoded.length >= 2 && ticksAllZero) {
+  /* Reset higher positions on a manual position jump (ticks all zero).
+     Threshold: 2+ counter bytes BUT only if pos1 byte is offset-encoded
+     (>= 0x10), which means it's a Bars message (bar-ones) not a
+     Mins:Secs seconds-only message (sec-tens = raw 0x00-0x09).
+     This lets "bar 5" (2 bytes, pos1=0x15) reset stale tens/hundreds,
+     while "type 58 seconds" (2 bytes, pos1=0x05) leaves minutes intact. */
+  var pos1IsOffset = (counterBytes.length >= 2 && counterBytes[1] >= 0x10);
+  if (decoded.length >= 2 && ticksAllZero && (decoded.length >= 3 || pos1IsOffset)) {
     for (var k = decoded.length; k < reg.length; k++) reg[k] = 0;
   }
 
@@ -328,12 +377,15 @@ function parseHui(data) {
   document.getElementById('db-raw').textContent = cHex;
   document.getElementById('db-reg').textContent =
     'beat='+reg[0]+' b1='+reg[1]+' b10='+reg[2]+' b100='+reg[3]+' b1k='+reg[4];
-  document.getElementById('db-res').textContent = 'bar='+bars+' beat='+reg[0];
+  var secs3 = reg[0] + reg[1]*10;
+  var mins3 = reg[2] + reg[3]*10;
+  document.getElementById('db-res').textContent = 'bar='+bars+' beat='+reg[0]+' | '+pad(mins3,2)+':'+pad(secs3,2);
 
+  var secs2 = reg[0] + reg[1]*10;
+  var mins2 = reg[2] + reg[3]*10;
   document.getElementById('dec-out').textContent =
-    'bars  → ' + bars + '\n' +
-    'beat  → ' + reg[0] + '\n' +
-    'ticks → 000  (next to decode)\n' +
+    'bars  → ' + bars + '  beat → ' + reg[0] + '\n' +
+    'mins  → ' + pad(mins2,2) + ':' + pad(secs2,2) + '\n' +
     'raw   → ' + cHex;
 
   return true;
