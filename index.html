@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProMIDI · HUI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --hui-green: #39ff6a;
+      --hui-red: #ff3a3a;
+      --hui-amber: #ffaa00;
+      --hui-bg: #0d0f0d;
+      --hui-panel: #111411;
+      --hui-border: #1e2a1e;
+      --hui-text: #a0c8a0;
+      --hui-dim: #3a4a3a;
+      --accent: var(--hui-green);
+    }
+
+    html, body {
+      background: #090b09;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 720px;
+      background: var(--hui-bg);
+      color: var(--hui-text);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--hui-border);
+      box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 120px rgba(57,255,106,0.03);
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--hui-border);
+      background: var(--hui-panel);
+    }
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--accent);
+      transition: color 0.3s;
+    }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--hui-text);
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--hui-dim);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .status-dot.active {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* ── Transport row ── */
+    .transport-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--hui-border);
+      background: var(--hui-panel);
+    }
+    .transport-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--hui-dim);
+      margin-right: 6px;
+    }
+    .transport-btn {
+      width: 38px; height: 38px;
+      border-radius: 5px;
+      border: 1px solid var(--hui-border);
+      background: transparent;
+      color: var(--hui-dim);
+      font-size: 14px;
+      cursor: default;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      font-family: 'Rajdhani', sans-serif;
+      user-select: none;
+    }
+    .transport-btn.lit {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(57,255,106,0.05);
+    }
+    .transport-btn.rec.lit {
+      border-color: var(--hui-red);
+      color: var(--hui-red);
+      background: rgba(255,58,58,0.07);
+    }
+    .proto-badge {
+      margin-left: auto;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--hui-dim);
+      text-transform: uppercase;
+    }
+
+    /* ── Main grid ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .panel {
+      padding: 18px 20px;
+      border-right: 1px solid var(--hui-border);
+      border-bottom: 1px solid var(--hui-border);
+    }
+    .panel:nth-child(even) { border-right: none; }
+    .panel-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--hui-dim);
+      margin-bottom: 12px;
+    }
+
+    /* ── Timecode display ── */
+    .timecode-display {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 40px;
+      color: var(--accent);
+      letter-spacing: 3px;
+      transition: color 0.3s;
+      line-height: 1;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+    }
+    .timecode-display.small {
+      font-size: 22px;
+      letter-spacing: 2px;
+      min-height: 32px;
+    }
+    .timecode-display.dim { color: var(--hui-dim); }
+
+    /* ── Ruler mode tabs ── */
+    .ruler-tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+    .ruler-tab {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border: 1px solid var(--hui-border);
+      border-radius: 3px;
+      cursor: pointer;
+      color: var(--hui-dim);
+      background: transparent;
+      font-family: 'Rajdhani', sans-serif;
+      transition: all 0.15s;
+    }
+    .ruler-tab:hover { border-color: var(--hui-text); color: var(--hui-text); }
+    .ruler-tab.active { border-color: var(--accent); color: var(--accent); }
+
+    /* ── State LEDs ── */
+    .state-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .state-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--hui-dim);
+      transition: color 0.2s;
+    }
+    .state-item.lit { color: var(--hui-text); }
+    .state-led {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--hui-dim);
+      flex-shrink: 0;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .state-led.on { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+    .state-led.on.red { background: var(--hui-red); box-shadow: 0 0 5px var(--hui-red); }
+
+    /* ── Device selectors ── */
+    .device-select {
+      width: 100%;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      padding: 7px 10px;
+      background: var(--hui-bg);
+      color: var(--hui-text);
+      border: 1px solid var(--hui-border);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      appearance: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .device-select:focus { outline: none; border-color: var(--accent); }
+    .device-select:hover { border-color: var(--hui-text); }
+
+    .connect-btn {
+      width: 100%;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px;
+      background: transparent;
+      border: 1px solid var(--hui-border);
+      color: var(--hui-text);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .connect-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .connect-btn.connected { border-color: var(--accent); color: var(--accent); }
+
+    .midi-msg {
+      font-size: 11px;
+      color: var(--hui-amber);
+      letter-spacing: 1px;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ── Signal monitor ── */
+    .signal-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .signal-bars { display: flex; gap: 3px; align-items: flex-end; }
+    .sig-bar {
+      width: 4px;
+      background: var(--hui-dim);
+      border-radius: 1px;
+      transition: background 0.08s;
+    }
+    .sig-bar.active { background: var(--accent); }
+    .signal-label {
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--hui-dim);
+      transition: color 0.2s;
+    }
+
+    /* ── Message log ── */
+    .log-area {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: var(--hui-dim);
+      height: 90px;
+      overflow-y: auto;
+      border: 1px solid var(--hui-border);
+      border-radius: 4px;
+      padding: 7px 9px;
+      background: var(--hui-bg);
+      line-height: 1.7;
+      scrollbar-width: thin;
+      scrollbar-color: var(--hui-border) transparent;
+    }
+    .log-area::-webkit-scrollbar { width: 4px; }
+    .log-area::-webkit-scrollbar-track { background: transparent; }
+    .log-area::-webkit-scrollbar-thumb { background: var(--hui-border); border-radius: 2px; }
+    .log-line { color: var(--hui-text); }
+    .log-line.sysex { color: var(--hui-green); }
+    .log-line.warn  { color: var(--hui-amber); }
+    .log-line.info  { color: #5a8aaa; }
+
+    .demo-btn {
+      margin-top: 8px;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      background: transparent;
+      border: 1px solid var(--hui-dim);
+      color: var(--hui-dim);
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      transition: all 0.15s;
+    }
+    .demo-btn:hover { border-color: var(--hui-amber); color: var(--hui-amber); }
+    .demo-btn.running { border-color: var(--hui-amber); color: var(--hui-amber); }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 10px 20px;
+      border-top: 1px solid var(--hui-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--hui-panel);
+    }
+    .footer-note {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--hui-dim);
+    }
+    .footer-note a { color: var(--hui-dim); text-decoration: none; }
+    .footer-note a:hover { color: var(--hui-text); }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="logo" id="logo">ProMIDI · HUI</div>
+    <div class="status-pill">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-label">No MIDI Access</span>
+    </div>
+  </div>
+
+  <!-- Transport -->
+  <div class="transport-row">
+    <span class="transport-label">Transport</span>
+    <div class="transport-btn" id="btn-rew"  title="Rewind">&#9664;&#9664;</div>
+    <div class="transport-btn" id="btn-ff"   title="Fast Fwd">&#9654;&#9654;</div>
+    <div class="transport-btn" id="btn-stop" title="Stop">&#9646;</div>
+    <div class="transport-btn lit" id="btn-play" title="Play">&#9654;</div>
+    <div class="transport-btn rec" id="btn-rec"  title="Record">&#9679;</div>
+    <div class="proto-badge">HUI · SysEx</div>
+  </div>
+
+  <!-- Main 2-col grid -->
+  <div class="main-grid">
+
+    <!-- Primary Counter -->
+    <div class="panel">
+      <div class="panel-label">Primary Counter</div>
+      <div class="ruler-tabs">
+        <button class="ruler-tab active" data-mode="bars">Bars|Beats</button>
+        <button class="ruler-tab" data-mode="timecode">Timecode</button>
+        <button class="ruler-tab" data-mode="mins">Mins:Secs</button>
+      </div>
+      <div class="timecode-display" id="primary-display">--:--:--:--</div>
+    </div>
+
+    <!-- Secondary Counter + LEDs -->
+    <div class="panel">
+      <div class="panel-label">Secondary Counter</div>
+      <div style="height:38px"></div>
+      <div class="timecode-display small dim" id="secondary-display">--:--:--:--</div>
+      <div class="state-grid">
+        <div class="state-item" id="item-play"><div class="state-led" id="led-play"></div>Play</div>
+        <div class="state-item" id="item-rec"><div class="state-led red" id="led-rec"></div>Record</div>
+        <div class="state-item" id="item-loop"><div class="state-led" id="led-loop"></div>Loop</div>
+        <div class="state-item" id="item-online"><div class="state-led on" id="led-online"></div>Online</div>
+      </div>
+    </div>
+
+    <!-- MIDI Device -->
+    <div class="panel">
+      <div class="panel-label">MIDI Device</div>
+      <select class="device-select" id="device-in"><option value="">— Select Input —</option></select>
+      <select class="device-select" id="device-out"><option value="">— Select Output —</option></select>
+      <button class="connect-btn" id="connect-btn">Request MIDI Access</button>
+      <div id="midi-status-msg"></div>
+    </div>
+
+    <!-- Signal Monitor -->
+    <div class="panel">
+      <div class="panel-label">Signal Monitor</div>
+      <div class="signal-bar-wrap">
+        <div class="signal-bars" id="signal-bars"></div>
+        <span class="signal-label" id="signal-label">No Signal</span>
+      </div>
+      <div class="panel-label">Last SysEx (hex)</div>
+      <div class="log-area" id="log-area">
+        <div class="log-line info">— Awaiting MIDI messages —</div>
+      </div>
+      <button class="demo-btn" id="demo-btn">Simulate Pro Tools</button>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="footer-note">Web MIDI API · HUI Protocol · Pro Tools Display Parser</span>
+    <span class="footer-note">Chrome / Edge only &nbsp;·&nbsp; Requires HTTPS</span>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ─────────────────────────────────────────
+     State
+  ───────────────────────────────────────── */
+  let midiAccess    = null;
+  let selectedInput  = null;
+  let selectedOutput = null;
+  let isRecording   = false;
+  let displayMode   = 'bars';
+  let signalTimer   = null;
+  let demoInterval  = null;
+
+  const state = {
+    bars: '001', beat: '1', ticks: '000',
+    hours: '00', mins: '00', secs: '00', frames: '00',
+    minsOnly: '00', secsOnly: '00', ms: '000',
+    play: true, rec: false, loop: false, online: true
+  };
+
+  /* ─────────────────────────────────────────
+     Logging
+  ───────────────────────────────────────── */
+  function log(msg, type) {
+    type = type || '';
+    const area = document.getElementById('log-area');
+    const now  = new Date().toTimeString().slice(0, 8);
+    const line = document.createElement('div');
+    line.className = 'log-line ' + type;
+    line.textContent = '[' + now + '] ' + msg;
+    area.appendChild(line);
+    area.scrollTop = area.scrollHeight;
+    if (area.children.length > 100) area.removeChild(area.children[0]);
+  }
+
+  /* ─────────────────────────────────────────
+     Accent / Record state
+  ───────────────────────────────────────── */
+  function setAccent(recording) {
+    isRecording = recording;
+    document.getElementById('app').style.setProperty(
+      '--accent', recording ? 'var(--hui-red)' : 'var(--hui-green)'
+    );
+    document.getElementById('logo').style.color =
+      recording ? 'var(--hui-red)' : 'var(--hui-green)';
+    document.getElementById('btn-rec').classList.toggle('lit', recording);
+    document.getElementById('led-rec').classList.toggle('on', recording);
+    setPlayState(state.play);
+  }
+
+  function setPlayState(playing) {
+    state.play = playing;
+    document.getElementById('btn-play').classList.toggle('lit', playing);
+    const ledPlay = document.getElementById('led-play');
+    const itemPlay = document.getElementById('item-play');
+    ledPlay.classList.toggle('on', playing || isRecording);
+    itemPlay.classList.toggle('lit', playing || isRecording);
+  }
+
+  /* ─────────────────────────────────────────
+     Display update
+  ───────────────────────────────────────── */
+  function updateDisplay() {
+    const primary   = document.getElementById('primary-display');
+    const secondary = document.getElementById('secondary-display');
+    const tc  = state.hours + ':' + state.mins + ':' + state.secs + ':' + state.frames;
+    const bb  = state.bars + '|' + state.beat + '|' + state.ticks;
+    const ms  = state.minsOnly + ':' + state.secsOnly + '.' + state.ms;
+
+    if (displayMode === 'bars') {
+      primary.textContent   = bb;
+      secondary.textContent = tc;
+    } else if (displayMode === 'timecode') {
+      primary.textContent   = tc;
+      secondary.textContent = bb;
+    } else {
+      primary.textContent   = ms;
+      secondary.textContent = tc;
+    }
+  }
+
+  /* ─────────────────────────────────────────
+     Signal pulse
+  ───────────────────────────────────────── */
+  function buildSignalBars() {
+    const wrap = document.getElementById('signal-bars');
+    wrap.innerHTML = '';
+    [6, 9, 12, 16, 20, 16, 12, 9, 6].forEach(function (h) {
+      const b = document.createElement('div');
+      b.className = 'sig-bar';
+      b.style.height = h + 'px';
+      wrap.appendChild(b);
+    });
+  }
+
+  function pulseSignal() {
+    const bars  = document.getElementById('signal-bars').querySelectorAll('.sig-bar');
+    const label = document.getElementById('signal-label');
+    label.textContent = 'HUI Active';
+    label.style.color = 'var(--accent)';
+    bars.forEach(function (b) { b.classList.add('active'); });
+    clearTimeout(signalTimer);
+    signalTimer = setTimeout(function () {
+      bars.forEach(function (b) { b.classList.remove('active'); });
+      label.textContent = 'Idle';
+      label.style.color = 'var(--hui-dim)';
+    }, 400);
+  }
+
+  /* ─────────────────────────────────────────
+     HUI SysEx Parser
+  ───────────────────────────────────────── */
+
+  // Pro Tools HUI keep-alive ping: F0 00 00 66 05 F7 (no payload)
+  function isHuiPing(data) {
+    return data.length === 6 &&
+      data[0] === 0xF0 && data[1] === 0x00 && data[2] === 0x00 &&
+      data[3] === 0x66 && data[4] === 0x05 && data[5] === 0xF7;
+  }
+
+  // Main SysEx dispatcher: F0 00 00 66 05 <subCmd> ...
+  function parseHuiSysEx(data) {
+    if (data.length < 7) return false;
+    if (data[0] !== 0xF0) return false;
+    if (data[1] !== 0x00 || data[2] !== 0x00 || data[3] !== 0x66 || data[4] !== 0x05) return false;
+
+    var subCmd = data[5];
+
+    // 0x11 = display/counter string update
+    if (subCmd === 0x11) {
+      var zone = data[6];
+      if (zone === 0x11) {           // Counter zone
+        var chars = [];
+        for (var i = 7; i < data.length - 1; i++) {
+          var c = data[i] & 0x7F;
+          if (c >= 32) chars.push(String.fromCharCode(c));
+        }
+        parseCounterString(chars.join('').trim());
+        return true;
+      }
+    }
+
+    // 0x0F = packed BCD timecode digits (8 bytes of BCD)
+    if (subCmd === 0x0F && data.length >= 14) {
+      var digits = [];
+      for (var j = 6; j < data.length - 1 && digits.length < 8; j++) {
+        var hi = (data[j] >> 4) & 0x0F;
+        var lo = data[j] & 0x0F;
+        if (hi <= 9) digits.push(hi.toString());
+        if (lo <= 9) digits.push(lo.toString());
+      }
+      if (digits.length >= 8) {
+        state.hours  = digits[0] + digits[1];
+        state.mins   = digits[2] + digits[3];
+        state.secs   = digits[4] + digits[5];
+        state.frames = digits[6] + digits[7];
+        deriveMinsSecsMs();
+        updateDisplay();
+      }
+      return true;
+    }
+
+    // 0x10 = switch / button state
+    if (subCmd === 0x10 && data.length >= 8) {
+      handleHuiSwitch(data[6], data[7]);
+      return true;
+    }
+
+    return false;
+  }
+
+  // Parse ASCII counter string like "001|1|000" or "00:00:00:00"
+  function parseCounterString(str) {
+    var bbMatch = str.match(/^(\d+)[|:\s](\d+)[|:\s](\d+)/);
+    if (bbMatch) {
+      state.bars  = bbMatch[1].padStart(3, '0');
+      state.beat  = bbMatch[2];
+      state.ticks = bbMatch[3].padStart(3, '0');
+    }
+    var tcMatch = str.match(/(\d{1,2}):(\d{2}):(\d{2}):(\d{2})/);
+    if (tcMatch) {
+      state.hours  = tcMatch[1].padStart(2, '0');
+      state.mins   = tcMatch[2];
+      state.secs   = tcMatch[3];
+      state.frames = tcMatch[4];
+      deriveMinsSecsMs();
+    }
+    updateDisplay();
+  }
+
+  function deriveMinsSecsMs() {
+    var totalSecs = parseInt(state.hours) * 3600 + parseInt(state.mins) * 60 + parseInt(state.secs);
+    state.minsOnly = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+    state.secsOnly = String(totalSecs % 60).padStart(2, '0');
+    state.ms       = (state.frames + '0').slice(0, 3);
+  }
+
+  // Handle transport/switch messages
+  function handleHuiSwitch(sw, val) {
+    var on = val > 0;
+    if (sw === 0x00) setPlayState(on);
+    if (sw === 0x02) setAccent(on);
+    if (sw === 0x03) {
+      state.loop = on;
+      document.getElementById('led-loop').classList.toggle('on', on);
+      document.getElementById('item-loop').classList.toggle('lit', on);
+    }
+  }
+
+  /* ─────────────────────────────────────────
+     MIDI message handler
+  ───────────────────────────────────────── */
+  function onMidiMessage(event) {
+    var data = Array.from(event.data);
+    var hex  = data.map(function (b) {
+      return b.toString(16).padStart(2, '0').toUpperCase();
+    }).join(' ');
+
+    // Handle HUI keep-alive ping silently, respond with pong
+    if (isHuiPing(data)) {
+      pulseSignal();
+      if (selectedOutput) {
+        selectedOutput.send(new Uint8Array([0xF0, 0x00, 0x00, 0x66, 0x05, 0x00, 0xF7]));
+      }
+      return;
+    }
+
+    pulseSignal();
+
+    if (data[0] === 0xF0) {
+      if (parseHuiSysEx(data)) {
+        log('SysEx ' + hex.slice(0, 48) + (hex.length > 48 ? '…' : ''), 'sysex');
+      } else {
+        log('SysEx (unknown) ' + hex.slice(0, 36), 'warn');
+      }
+    } else if (data[0] >= 0x80 && data[0] <= 0xEF) {
+      // Regular MIDI channel message
+      log('MIDI ' + hex, '');
+    }
+  }
+
+  /* ─────────────────────────────────────────
+     Web MIDI Access
+  ───────────────────────────────────────── */
+  function requestMidi() {
+    var btn   = document.getElementById('connect-btn');
+    var msgEl = document.getElementById('midi-status-msg');
+
+    if (!navigator.requestMIDIAccess) {
+      msgEl.innerHTML = '<div class="midi-msg">Web MIDI is not supported in this browser.<br>Please use Google Chrome or Microsoft Edge over HTTPS.</div>';
+      return;
+    }
+
+    navigator.requestMIDIAccess({ sysex: true }).then(function (access) {
+      midiAccess = access;
+      btn.textContent = 'MIDI Access Granted ✓';
+      btn.classList.add('connected');
+      document.getElementById('status-dot').classList.add('active');
+      document.getElementById('status-label').textContent = 'MIDI Ready';
+      log('MIDI access granted (sysex: true)', 'info');
+      populateDevices();
+      midiAccess.onstatechange = function () {
+        populateDevices();
+        log('MIDI device list changed', 'info');
+      };
+    }).catch(function (err) {
+      msgEl.innerHTML = '<div class="midi-msg">Access denied: ' + err.message + '</div>';
+      log('MIDI access denied: ' + err.message, 'warn');
+    });
+  }
+
+  function populateDevices() {
+    var inSel   = document.getElementById('device-in');
+    var outSel  = document.getElementById('device-out');
+    var prevIn  = inSel.value;
+    var prevOut = outSel.value;
+
+    inSel.innerHTML  = '<option value="">— Select Input —</option>';
+    outSel.innerHTML = '<option value="">— Select Output —</option>';
+
+    midiAccess.inputs.forEach(function (port, id) {
+      var opt = document.createElement('option');
+      opt.value = id; opt.textContent = port.name;
+      if (id === prevIn) opt.selected = true;
+      inSel.appendChild(opt);
+    });
+
+    midiAccess.outputs.forEach(function (port, id) {
+      var opt = document.createElement('option');
+      opt.value = id; opt.textContent = port.name;
+      if (id === prevOut) opt.selected = true;
+      outSel.appendChild(opt);
+    });
+
+    var inputCount = 0;
+    midiAccess.inputs.forEach(function () { inputCount++; });
+    if (inputCount === 0) {
+      log('No MIDI inputs found — connect a device and refresh', 'warn');
+    } else {
+      log(inputCount + ' MIDI input(s) available', 'info');
+    }
+  }
+
+  document.getElementById('device-in').addEventListener('change', function () {
+    if (selectedInput) selectedInput.onmidimessage = null;
+    selectedInput = null;
+    if (!midiAccess || !this.value) return;
+    selectedInput = midiAccess.inputs.get(this.value);
+    if (selectedInput) {
+      selectedInput.onmidimessage = onMidiMessage;
+      log('Listening on: ' + selectedInput.name, 'info');
+    }
+  });
+
+  document.getElementById('device-out').addEventListener('change', function () {
+    selectedOutput = null;
+    if (!midiAccess || !this.value) return;
+    selectedOutput = midiAccess.outputs.get(this.value);
+    if (selectedOutput) log('HUI pong output: ' + selectedOutput.name, 'info');
+  });
+
+  document.getElementById('connect-btn').addEventListener('click', requestMidi);
+
+  /* ─────────────────────────────────────────
+     Ruler mode tabs
+  ───────────────────────────────────────── */
+  document.querySelectorAll('.ruler-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.ruler-tab').forEach(function (t) {
+        t.classList.remove('active');
+      });
+      this.classList.add('active');
+      displayMode = this.dataset.mode;
+      updateDisplay();
+    });
+  });
+
+  /* ─────────────────────────────────────────
+     Demo / Simulation
+  ───────────────────────────────────────── */
+  var demoFrame = 0, demoSecs = 0, demoMins = 0;
+  var demoBars = 1, demoBeat = 1, demoTicks = 0;
+  var demoRecToggle = 0;
+
+  document.getElementById('demo-btn').addEventListener('click', function () {
+    var btn = document.getElementById('demo-btn');
+    if (demoInterval) {
+      clearInterval(demoInterval);
+      demoInterval = null;
+      btn.textContent = 'Simulate Pro Tools';
+      btn.classList.remove('running');
+      log('Demo simulation stopped', 'info');
+      return;
+    }
+    btn.textContent = 'Stop Simulation';
+    btn.classList.add('running');
+    log('Demo simulation started — no real MIDI device needed', 'info');
+    setPlayState(true);
+
+    demoInterval = setInterval(function () {
+      // Advance time at ~30fps
+      demoFrame++;
+      if (demoFrame >= 30)    { demoFrame = 0; demoSecs++; }
+      if (demoSecs >= 60)     { demoSecs = 0; demoMins++; }
+      if (demoMins >= 60)     { demoMins = 0; }
+
+      // Advance bars/beats
+      demoTicks += 10;
+      if (demoTicks >= 960)   { demoTicks = 0; demoBeat++; }
+      if (demoBeat > 4)       { demoBeat = 1; demoBars++; }
+
+      // Update state
+      state.hours    = '00';
+      state.mins     = String(demoMins).padStart(2, '0');
+      state.secs     = String(demoSecs).padStart(2, '0');
+      state.frames   = String(demoFrame).padStart(2, '0');
+      state.bars     = String(demoBars).padStart(3, '0');
+      state.beat     = String(demoBeat);
+      state.ticks    = String(demoTicks).padStart(3, '0');
+      state.minsOnly = String(demoMins).padStart(2, '0');
+      state.secsOnly = String(demoSecs).padStart(2, '0');
+      state.ms       = String(demoFrame * 33).padStart(3, '0').slice(0, 3);
+
+      // Simulate a Record arm cycle every ~10 seconds
+      demoRecToggle++;
+      if (demoRecToggle === 300) { setAccent(true);  log('REC: armed (simulated)', 'sysex'); }
+      if (demoRecToggle === 500) { setAccent(false); log('REC: disarmed (simulated)', 'sysex'); demoRecToggle = 0; }
+
+      updateDisplay();
+      pulseSignal();
+
+      // Log simulated SysEx line every second
+      if (demoFrame === 0) {
+        log('SysEx F0 00 00 66 05 0F ' + state.hours + state.mins + state.secs + state.frames + ' (simulated)', 'sysex');
+      }
+    }, 33); // ~30fps
+  });
+
+  /* ─────────────────────────────────────────
+     Init
+  ───────────────────────────────────────── */
+  buildSignalBars();
+  updateDisplay();
+  document.getElementById('led-online').classList.add('on');
+  document.getElementById('item-online').classList.add('lit');
+
+})();
+</script>
+
+</body>
+</html>
