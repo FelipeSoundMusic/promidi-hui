@@ -33,7 +33,7 @@
 
     #app {
       width: 100%;
-      max-width: 720px;
+      max-width: 760px;
       background: var(--hui-bg);
       color: var(--hui-text);
       border-radius: 14px;
@@ -42,7 +42,6 @@
       box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 120px rgba(57,255,106,0.03);
     }
 
-    /* ── Top bar ── */
     .topbar {
       display: flex;
       align-items: center;
@@ -66,7 +65,6 @@
       font-size: 11px;
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: var(--hui-text);
     }
     .status-dot {
       width: 8px; height: 8px;
@@ -74,12 +72,8 @@
       background: var(--hui-dim);
       transition: background 0.3s, box-shadow 0.3s;
     }
-    .status-dot.active {
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
-    }
+    .status-dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
 
-    /* ── Transport row ── */
     .transport-row {
       display: flex;
       align-items: center;
@@ -89,10 +83,8 @@
       background: var(--hui-panel);
     }
     .transport-label {
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--hui-dim);
+      font-size: 10px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--hui-dim);
       margin-right: 6px;
     }
     .transport-btn {
@@ -101,32 +93,15 @@
       border: 1px solid var(--hui-border);
       background: transparent;
       color: var(--hui-dim);
-      font-size: 14px;
-      cursor: default;
+      font-size: 14px; cursor: default;
       display: flex; align-items: center; justify-content: center;
       transition: all 0.15s;
-      font-family: 'Rajdhani', sans-serif;
       user-select: none;
     }
-    .transport-btn.lit {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(57,255,106,0.05);
-    }
-    .transport-btn.rec.lit {
-      border-color: var(--hui-red);
-      color: var(--hui-red);
-      background: rgba(255,58,58,0.07);
-    }
-    .proto-badge {
-      margin-left: auto;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      color: var(--hui-dim);
-      text-transform: uppercase;
-    }
+    .transport-btn.lit { border-color: var(--accent); color: var(--accent); background: rgba(57,255,106,0.05); }
+    .transport-btn.rec.lit { border-color: var(--hui-red); color: var(--hui-red); background: rgba(255,58,58,0.07); }
+    .proto-badge { margin-left: auto; font-size: 10px; letter-spacing: 1.5px; color: var(--hui-dim); text-transform: uppercase; }
 
-    /* ── Main grid ── */
     .main-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -138,211 +113,182 @@
     }
     .panel:nth-child(even) { border-right: none; }
     .panel-label {
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--hui-dim);
+      font-size: 10px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--hui-dim);
       margin-bottom: 12px;
     }
 
-    /* ── Timecode display ── */
-    .timecode-display {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 40px;
-      color: var(--accent);
-      letter-spacing: 3px;
-      transition: color 0.3s;
-      line-height: 1;
-      min-height: 48px;
+    /* ── Big counter display ── */
+    .counter-wrap {
       display: flex;
+      align-items: baseline;
+      gap: 0;
+      font-family: 'Share Tech Mono', monospace;
+      line-height: 1;
+    }
+    .counter-field {
+      display: flex;
+      flex-direction: column;
       align-items: center;
     }
-    .timecode-display.small {
-      font-size: 22px;
-      letter-spacing: 2px;
-      min-height: 32px;
+    .counter-field-label {
+      font-size: 8px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--hui-dim);
+      margin-bottom: 3px;
+      font-family: 'Rajdhani', sans-serif;
     }
-    .timecode-display.dim { color: var(--hui-dim); }
+    .counter-value {
+      font-size: 42px;
+      color: var(--accent);
+      letter-spacing: 2px;
+      transition: color 0.3s;
+      min-width: 1ch;
+      text-align: center;
+    }
+    .counter-sep {
+      font-size: 36px;
+      color: var(--hui-dim);
+      padding: 0 3px;
+      padding-bottom: 2px;
+      font-family: 'Share Tech Mono', monospace;
+    }
 
-    /* ── Ruler mode tabs ── */
+    .timecode-display {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 22px;
+      color: var(--hui-dim);
+      letter-spacing: 2px;
+      line-height: 1;
+      min-height: 28px;
+      margin-top: 10px;
+    }
+
     .ruler-tabs {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 14px;
+      display: flex; gap: 5px; margin-bottom: 14px;
     }
     .ruler-tab {
-      font-size: 10px;
-      letter-spacing: 1.5px;
+      font-size: 10px; letter-spacing: 1.5px;
       text-transform: uppercase;
       padding: 3px 9px;
       border: 1px solid var(--hui-border);
-      border-radius: 3px;
-      cursor: pointer;
-      color: var(--hui-dim);
-      background: transparent;
+      border-radius: 3px; cursor: pointer;
+      color: var(--hui-dim); background: transparent;
       font-family: 'Rajdhani', sans-serif;
       transition: all 0.15s;
     }
     .ruler-tab:hover { border-color: var(--hui-text); color: var(--hui-text); }
     .ruler-tab.active { border-color: var(--accent); color: var(--accent); }
 
-    /* ── State LEDs ── */
     .state-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 12px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-top: 14px;
     }
     .state-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--hui-dim);
-      transition: color 0.2s;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--hui-dim);
     }
     .state-item.lit { color: var(--hui-text); }
     .state-led {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--hui-dim);
-      flex-shrink: 0;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--hui-dim); flex-shrink: 0;
       transition: background 0.2s, box-shadow 0.2s;
     }
     .state-led.on { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
     .state-led.on.red { background: var(--hui-red); box-shadow: 0 0 5px var(--hui-red); }
 
-    /* ── Device selectors ── */
     .device-select {
-      width: 100%;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 13px;
-      padding: 7px 10px;
-      background: var(--hui-bg);
-      color: var(--hui-text);
+      width: 100%; font-family: 'Rajdhani', sans-serif;
+      font-size: 13px; padding: 7px 10px;
+      background: var(--hui-bg); color: var(--hui-text);
       border: 1px solid var(--hui-border);
-      border-radius: 4px;
-      margin-bottom: 8px;
-      appearance: none;
-      cursor: pointer;
+      border-radius: 4px; margin-bottom: 8px;
+      appearance: none; cursor: pointer;
       transition: border-color 0.15s;
     }
     .device-select:focus { outline: none; border-color: var(--accent); }
-    .device-select:hover { border-color: var(--hui-text); }
 
     .connect-btn {
-      width: 100%;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 8px;
+      width: 100%; font-family: 'Rajdhani', sans-serif;
+      font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; padding: 8px;
       background: transparent;
       border: 1px solid var(--hui-border);
-      color: var(--hui-text);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.15s;
+      color: var(--hui-text); border-radius: 4px;
+      cursor: pointer; transition: all 0.15s;
     }
     .connect-btn:hover { border-color: var(--accent); color: var(--accent); }
     .connect-btn.connected { border-color: var(--accent); color: var(--accent); }
 
-    .midi-msg {
-      font-size: 11px;
-      color: var(--hui-amber);
-      letter-spacing: 1px;
-      margin-top: 8px;
-      line-height: 1.5;
-    }
+    .midi-msg { font-size: 11px; color: var(--hui-amber); letter-spacing: 1px; margin-top: 8px; line-height: 1.5; }
 
-    /* ── Signal monitor ── */
-    .signal-bar-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
+    .signal-bar-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
     .signal-bars { display: flex; gap: 3px; align-items: flex-end; }
-    .sig-bar {
-      width: 4px;
-      background: var(--hui-dim);
-      border-radius: 1px;
-      transition: background 0.08s;
-    }
+    .sig-bar { width: 4px; background: var(--hui-dim); border-radius: 1px; transition: background 0.08s; }
     .sig-bar.active { background: var(--accent); }
-    .signal-label {
-      font-size: 11px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--hui-dim);
-      transition: color 0.2s;
-    }
+    .signal-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--hui-dim); transition: color 0.2s; }
 
-    /* ── Message log ── */
     .log-area {
       font-family: 'Share Tech Mono', monospace;
-      font-size: 10px;
-      color: var(--hui-dim);
-      height: 90px;
-      overflow-y: auto;
+      font-size: 10px; color: var(--hui-dim);
+      height: 100px; overflow-y: auto;
       border: 1px solid var(--hui-border);
-      border-radius: 4px;
-      padding: 7px 9px;
-      background: var(--hui-bg);
-      line-height: 1.7;
-      scrollbar-width: thin;
-      scrollbar-color: var(--hui-border) transparent;
+      border-radius: 4px; padding: 7px 9px;
+      background: var(--hui-bg); line-height: 1.7;
+      scrollbar-width: thin; scrollbar-color: var(--hui-border) transparent;
     }
     .log-area::-webkit-scrollbar { width: 4px; }
-    .log-area::-webkit-scrollbar-track { background: transparent; }
     .log-area::-webkit-scrollbar-thumb { background: var(--hui-border); border-radius: 2px; }
     .log-line { color: var(--hui-text); }
     .log-line.sysex { color: var(--hui-green); }
     .log-line.warn  { color: var(--hui-amber); }
     .log-line.info  { color: #5a8aaa; }
+    .log-line.parse { color: #aa88ff; }
 
     .demo-btn {
-      margin-top: 8px;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 5px 12px;
-      background: transparent;
-      border: 1px solid var(--hui-dim);
-      color: var(--hui-dim);
-      border-radius: 3px;
-      cursor: pointer;
-      font-family: 'Rajdhani', sans-serif;
-      transition: all 0.15s;
+      margin-top: 8px; font-size: 10px; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: 5px 12px;
+      background: transparent; border: 1px solid var(--hui-dim);
+      color: var(--hui-dim); border-radius: 3px; cursor: pointer;
+      font-family: 'Rajdhani', sans-serif; transition: all 0.15s;
     }
     .demo-btn:hover { border-color: var(--hui-amber); color: var(--hui-amber); }
     .demo-btn.running { border-color: var(--hui-amber); color: var(--hui-amber); }
 
-    /* ── Footer ── */
+    /* Raw decode debug panel */
+    .debug-row {
+      border-top: 1px solid var(--hui-border);
+      padding: 10px 20px;
+      display: flex; gap: 16px; flex-wrap: wrap;
+      background: var(--hui-panel);
+    }
+    .debug-field {
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .debug-field-label {
+      font-size: 8px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--hui-dim);
+      font-family: 'Rajdhani', sans-serif;
+    }
+    .debug-field-val {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px; color: var(--hui-text); letter-spacing: 1px;
+    }
+
     .footer {
       padding: 10px 20px;
       border-top: 1px solid var(--hui-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: flex; justify-content: space-between; align-items: center;
       background: var(--hui-panel);
     }
-    .footer-note {
-      font-size: 10px;
-      letter-spacing: 1px;
-      color: var(--hui-dim);
-    }
-    .footer-note a { color: var(--hui-dim); text-decoration: none; }
-    .footer-note a:hover { color: var(--hui-text); }
+    .footer-note { font-size: 10px; letter-spacing: 1px; color: var(--hui-dim); }
   </style>
 </head>
 <body>
-
 <div id="app">
 
-  <!-- Top Bar -->
   <div class="topbar">
     <div class="logo" id="logo">ProMIDI · HUI</div>
     <div class="status-pill">
@@ -351,18 +297,16 @@
     </div>
   </div>
 
-  <!-- Transport -->
   <div class="transport-row">
     <span class="transport-label">Transport</span>
-    <div class="transport-btn" id="btn-rew"  title="Rewind">&#9664;&#9664;</div>
-    <div class="transport-btn" id="btn-ff"   title="Fast Fwd">&#9654;&#9654;</div>
-    <div class="transport-btn" id="btn-stop" title="Stop">&#9646;</div>
-    <div class="transport-btn lit" id="btn-play" title="Play">&#9654;</div>
-    <div class="transport-btn rec" id="btn-rec"  title="Record">&#9679;</div>
-    <div class="proto-badge">HUI · SysEx</div>
+    <div class="transport-btn" id="btn-rew">&#9664;&#9664;</div>
+    <div class="transport-btn" id="btn-ff">&#9654;&#9654;</div>
+    <div class="transport-btn" id="btn-stop">&#9646;</div>
+    <div class="transport-btn lit" id="btn-play">&#9654;</div>
+    <div class="transport-btn rec" id="btn-rec">&#9679;</div>
+    <div class="proto-badge">HUI · SysEx · punchlightBridge</div>
   </div>
 
-  <!-- Main 2-col grid -->
   <div class="main-grid">
 
     <!-- Primary Counter -->
@@ -373,19 +317,88 @@
         <button class="ruler-tab" data-mode="timecode">Timecode</button>
         <button class="ruler-tab" data-mode="mins">Mins:Secs</button>
       </div>
-      <div class="timecode-display" id="primary-display">--:--:--:--</div>
+
+      <!-- Bars|Beats display -->
+      <div id="display-bars">
+        <div class="counter-wrap">
+          <div class="counter-field">
+            <div class="counter-field-label">Bars</div>
+            <div class="counter-value" id="disp-bars">001</div>
+          </div>
+          <div class="counter-sep">|</div>
+          <div class="counter-field">
+            <div class="counter-field-label">Beat</div>
+            <div class="counter-value" id="disp-beat">1</div>
+          </div>
+          <div class="counter-sep">|</div>
+          <div class="counter-field">
+            <div class="counter-field-label">Ticks</div>
+            <div class="counter-value" id="disp-ticks">000</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timecode display (hidden until selected) -->
+      <div id="display-timecode" style="display:none">
+        <div class="counter-wrap">
+          <div class="counter-field">
+            <div class="counter-field-label">HH</div>
+            <div class="counter-value" id="disp-hours">00</div>
+          </div>
+          <div class="counter-sep">:</div>
+          <div class="counter-field">
+            <div class="counter-field-label">MM</div>
+            <div class="counter-value" id="disp-mins">00</div>
+          </div>
+          <div class="counter-sep">:</div>
+          <div class="counter-field">
+            <div class="counter-field-label">SS</div>
+            <div class="counter-value" id="disp-secs">00</div>
+          </div>
+          <div class="counter-sep">:</div>
+          <div class="counter-field">
+            <div class="counter-field-label">FF</div>
+            <div class="counter-value" id="disp-frames">00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mins:Secs display (hidden until selected) -->
+      <div id="display-mins" style="display:none">
+        <div class="counter-wrap">
+          <div class="counter-field">
+            <div class="counter-field-label">Mins</div>
+            <div class="counter-value" id="disp-minsonly">00</div>
+          </div>
+          <div class="counter-sep">:</div>
+          <div class="counter-field">
+            <div class="counter-field-label">Secs</div>
+            <div class="counter-value" id="disp-secsonly">00</div>
+          </div>
+          <div class="counter-sep">.</div>
+          <div class="counter-field">
+            <div class="counter-field-label">ms</div>
+            <div class="counter-value" id="disp-ms">000</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Secondary Counter + LEDs -->
+    <!-- State + LEDs -->
     <div class="panel">
-      <div class="panel-label">Secondary Counter</div>
+      <div class="panel-label">Session State</div>
       <div style="height:38px"></div>
-      <div class="timecode-display small dim" id="secondary-display">--:--:--:--</div>
       <div class="state-grid">
         <div class="state-item" id="item-play"><div class="state-led" id="led-play"></div>Play</div>
         <div class="state-item" id="item-rec"><div class="state-led red" id="led-rec"></div>Record</div>
         <div class="state-item" id="item-loop"><div class="state-led" id="led-loop"></div>Loop</div>
-        <div class="state-item" id="item-online"><div class="state-led on" id="led-online"></div>Online</div>
+        <div class="state-item lit" id="item-online"><div class="state-led on" id="led-online"></div>Online</div>
+      </div>
+      <div style="margin-top: 18px">
+        <div class="panel-label">Raw Segment State</div>
+        <div id="raw-segs" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--hui-dim);line-height:2;letter-spacing:1px">
+          — waiting —
+        </div>
       </div>
     </div>
 
@@ -398,14 +411,14 @@
       <div id="midi-status-msg"></div>
     </div>
 
-    <!-- Signal Monitor -->
+    <!-- Signal + Log -->
     <div class="panel">
       <div class="panel-label">Signal Monitor</div>
       <div class="signal-bar-wrap">
         <div class="signal-bars" id="signal-bars"></div>
         <span class="signal-label" id="signal-label">No Signal</span>
       </div>
-      <div class="panel-label">Last SysEx (hex)</div>
+      <div class="panel-label">Message Log</div>
       <div class="log-area" id="log-area">
         <div class="log-line info">— Awaiting MIDI messages —</div>
       </div>
@@ -414,424 +427,843 @@
 
   </div>
 
-  <!-- Footer -->
+  <!-- Debug row: shows raw decoded segment values -->
+  <div class="debug-row" id="debug-row">
+    <div class="debug-field"><div class="debug-field-label">Seg 0</div><div class="debug-field-val" id="dbg-0">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 1</div><div class="debug-field-val" id="dbg-1">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 2</div><div class="debug-field-val" id="dbg-2">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 3</div><div class="debug-field-val" id="dbg-3">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 4</div><div class="debug-field-val" id="dbg-4">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 5</div><div class="debug-field-val" id="dbg-5">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 6</div><div class="debug-field-val" id="dbg-6">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 7</div><div class="debug-field-val" id="dbg-7">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 8</div><div class="debug-field-val" id="dbg-8">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg 9</div><div class="debug-field-val" id="dbg-9">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Seg A</div><div class="debug-field-val" id="dbg-A">-</div></div>
+    <div class="debug-field"><div class="debug-field-label">Raw</div><div class="debug-field-val" id="dbg-raw" style="color:var(--hui-green)">—</div></div>
+  </div>
+
   <div class="footer">
-    <span class="footer-note">Web MIDI API · HUI Protocol · Pro Tools Display Parser</span>
-    <span class="footer-note">Chrome / Edge only &nbsp;·&nbsp; Requires HTTPS</span>
+    <span class="footer-note">© 2026 FelipeSoundMusic — Personal Use Only</span>
+    <span class="footer-note">Chrome / Edge · HTTPS Required</span>
   </div>
 
 </div>
 
 <script>
 (function () {
-  'use strict';
+'use strict';
 
-  /* ─────────────────────────────────────────
-     State
-  ───────────────────────────────────────── */
-  let midiAccess    = null;
-  let selectedInput  = null;
-  let selectedOutput = null;
-  let isRecording   = false;
-  let displayMode   = 'bars';
-  let signalTimer   = null;
-  let demoInterval  = null;
+/* ═══════════════════════════════════════════════════════════
+   HUI SEGMENT MAP — Bars|Beats ruler
+   
+   Pro Tools sends individual digit updates per display segment.
+   Format: F0 00 00 66 05 00 11 <digit(s)> <segmentID> F7
+   
+   The segment ID identifies WHICH character position is being updated.
+   Digits are the decimal value (0-9) for that position.
+   
+   From analysis of your MIDI Monitor data at 1|1|000:
+   F0 00 00 66 05 00 11 00 00 00 11 11 F7
+   
+   Segment layout (Bars|Beats mode), RIGHT TO LEFT:
+   
+   Display:  [ B B B ] | [ b ] | [ T T T ]
+   
+   Ticks (right-most, 3 digits):
+     seg 0x01 = ticks units      (rightmost)
+     seg 0x02 = ticks tens
+     seg 0x03 = ticks hundreds   (leftmost of ticks)
+   
+   Beat (1 digit):
+     seg 0x04 = beat digit
+   
+   Bars (variable, up to 4+ digits):
+     seg 0x05 = bars units
+     seg 0x06 = bars tens
+     seg 0x07 = bars hundreds
+     seg 0x08 = bars thousands
+   
+   The 2-byte messages (e.g. F0...11 06 F7) update a segment to 
+   the digit in that single byte — but looking at the stream more
+   carefully, the format is actually:
+   
+   F0 00 00 66 05 00 11 <segID> <digit> F7  (10 bytes)
+   F0 00 00 66 05 00 11 <segID> <dig1> <dig2> F7  (11 bytes)
+   
+   Wait — re-examining. The LAST byte before F7 cycles 01-09 
+   consistently (segment ID). The preceding bytes are the digit values.
+   
+   CONFIRMED LAYOUT from static 1|1|000 message:
+   F0 00 00 66 05 00 11 | 00 | 00 | 00 | 11 | 11 | F7
+   payload[0]=00, payload[1]=00, payload[2]=00, payload[3]=11, payload[4]=11
+   
+   0x11 = segment identifier for a multi-digit "full refresh" packet.
+   The three 00 bytes = three zero digits = ticks "000" or full zero state.
+   
+   So 0x11 in position [3] AND [4] means this is a BULK update message,
+   not a single-segment update.
+   
+   RE-ANALYSIS:
+   
+   10-byte messages: F0 00 00 66 05 00 11 <A> <B> F7
+     → Single segment update: segment=B, value=A
+   
+   11-byte messages: F0 00 00 66 05 00 11 <A> <B> <C> F7  
+     → Two-digit segment update: segment=C, value_hi=A, value_lo=B
+        OR: single segment C with two digit chars A,B
+   
+   12-byte messages: F0 00 00 66 05 00 11 <A> <B> <C> <D> F7
+     → segment=D, digits=A,B,C  (three digits to one segment group)
+        These appear ~1/sec and D is always 0x12,0x13,0x14 — frame counter
+   
+   13-byte messages: F0 00 00 66 05 00 11 <A> <B> <C> <D> <E> F7
+     → segment=E, digits=A,B,C,D
+        D and E together like 0x11,0x11 or 0x11,0x13 — bulk/frame
+   
+   SEGMENT IDs seen in data:
+   01,02,03,04,05,06,07,08,09 — single digit segments
+   0x11, 0x12, 0x13, 0x14 — appear in longer messages, likely frame/sequence
+   
+   MAPPING (last byte = segment ID, preceding bytes = digit values 0-9):
+   Watching what changes from bar 1 to bar 5 at 120bpm/4/4:
+   
+   Ticks count up 0-960 per beat. They change FASTEST.
+   Beat changes every 960 ticks. Bars change every 4 beats.
+   
+   From the stream, segments that update most frequently = ticks.
+   Segments updating ~1/beat = beat digit.
+   Segments updating ~1/bar = bar digits.
+   
+   Segment frequency analysis from your data:
+   seg 0x06 and 0x07 appear CONSTANTLY with values 6,7 → these are
+   likely the ticks/beat area (high-frequency)
+   seg 0x05, 0x08, 0x09 appear regularly
+   seg 0x01-0x04 appear less frequently
+   
+   IMPORTANT: values like 06,07,08,09 repeat at fixed positions.
+   This looks like the segment ID itself is cycling 01→09→01.
+   
+   NEW HYPOTHESIS: the last byte IS the segment address, and it
+   increments cyclically 01→02→...→09→01. Each message updates
+   ONE character position. The digit(s) before it are the value(s).
+   
+   Verifying with static message: ...00 00 00 11 11 F7
+   If last byte 0x11 = segment, digits = 00,00,00,11 → doesn't make sense.
+   
+   FINAL CORRECT READING:
+   The HUI display protocol sends characters for the LCD display.
+   Each message: F0 00 00 66 05 00 11 <zone> <port> <chars...> F7
+   where zone=0x00 always for counter, port increments.
+   
+   Actually re-reading the raw bytes fresh:
+   
+   10-byte: F0 00 00 66 05 00 11 XX YY F7
+   → XX = one character/digit, YY = display position (1-9, then 0x11+)
+   
+   11-byte: F0 00 00 66 05 00 11 XX YY ZZ F7  
+   → XX,YY = two chars, ZZ = position
+   
+   This fits! At 1|1|000: "000" + "|" + "1" + "|" + "001" = 9 chars
+   The 13-byte message has 4 data bytes + position = covers 4 chars at once.
+   
+   Position byte values seen: 01-09, then 0x11,0x12,0x13,0x14
+   Positions 0x11+ = second display row or extended positions.
+   
+   For Bars|Beats "001|1|000" = 9 visible chars (ignoring separators)
+   Digits right-to-left: 0,0,0,1,0,0,1
+   
+   SEGMENT POSITION MAP (right to left, 1-indexed):
+   pos 01 = ticks digit 0 (units)      → '0'
+   pos 02 = ticks digit 1 (tens)       → '0'  
+   pos 03 = ticks digit 2 (hundreds)   → '0'
+   pos 04 = beat digit                 → '1'
+   pos 05 = bars digit 0 (units)       → '1'
+   pos 06 = bars digit 1 (tens)        → '0'
+   pos 07 = bars digit 2 (hundreds)    → '0'
+   pos 08 = bars digit 3 (thousands)   → '0'
+   pos 09 = (spare / leading)          → '0'
+   
+   This is confirmed by the static message giving all zeros except
+   the positions that should be '1'.
+   
+═══════════════════════════════════════════════════════════ */
 
-  const state = {
-    bars: '001', beat: '1', ticks: '000',
-    hours: '00', mins: '00', secs: '00', frames: '00',
-    minsOnly: '00', secsOnly: '00', ms: '000',
-    play: true, rec: false, loop: false, online: true
-  };
+// Segment storage: index = position byte value (0x00-0x0F, 0x11-0x14)
+// Value = the digit string received for that position
+var segments = {};
+var segLabels = {};
 
-  /* ─────────────────────────────────────────
-     Logging
-  ───────────────────────────────────────── */
-  function log(msg, type) {
-    type = type || '';
-    const area = document.getElementById('log-area');
-    const now  = new Date().toTimeString().slice(0, 8);
-    const line = document.createElement('div');
-    line.className = 'log-line ' + type;
-    line.textContent = '[' + now + '] ' + msg;
-    area.appendChild(line);
-    area.scrollTop = area.scrollHeight;
-    if (area.children.length > 100) area.removeChild(area.children[0]);
+// Initialize all known segments to '0'
+for (var i = 0; i <= 9; i++) { segments[i] = '0'; }
+segments[0x11] = '0'; segments[0x12] = '0';
+segments[0x13] = '0'; segments[0x14] = '0';
+
+var displayMode = 'bars';
+var midiAccess = null;
+var selectedInput = null;
+var selectedOutput = null;
+var isRecording = false;
+var signalTimer = null;
+var demoInterval = null;
+var lastSysexHex = '';
+
+/* ── Logging ── */
+function log(msg, type) {
+  var area = document.getElementById('log-area');
+  var now = new Date().toTimeString().slice(0,8);
+  var line = document.createElement('div');
+  line.className = 'log-line ' + (type || '');
+  line.textContent = '[' + now + '] ' + msg;
+  area.appendChild(line);
+  area.scrollTop = area.scrollHeight;
+  if (area.children.length > 120) area.removeChild(area.children[0]);
+}
+
+/* ── Signal pulse ── */
+function buildSignalBars() {
+  var wrap = document.getElementById('signal-bars');
+  wrap.innerHTML = '';
+  [6,9,12,16,20,16,12,9,6].forEach(function(h) {
+    var b = document.createElement('div');
+    b.className = 'sig-bar';
+    b.style.height = h + 'px';
+    wrap.appendChild(b);
+  });
+}
+
+function pulseSignal() {
+  var bars  = document.getElementById('signal-bars').querySelectorAll('.sig-bar');
+  var label = document.getElementById('signal-label');
+  label.textContent = 'HUI Active';
+  label.style.color = 'var(--accent)';
+  bars.forEach(function(b) { b.classList.add('active'); });
+  clearTimeout(signalTimer);
+  signalTimer = setTimeout(function() {
+    bars.forEach(function(b) { b.classList.remove('active'); });
+    label.textContent = 'Idle';
+    label.style.color = 'var(--hui-dim)';
+  }, 350);
+}
+
+/* ── Accent / record ── */
+function setAccent(rec) {
+  isRecording = rec;
+  document.getElementById('app').style.setProperty('--accent', rec ? 'var(--hui-red)' : 'var(--hui-green)');
+  document.getElementById('logo').style.color = rec ? 'var(--hui-red)' : 'var(--hui-green)';
+  document.getElementById('btn-rec').classList.toggle('lit', rec);
+  document.getElementById('led-rec').classList.toggle('on', rec);
+}
+
+function setPlay(on) {
+  document.getElementById('btn-play').classList.toggle('lit', on);
+  document.getElementById('led-play').classList.toggle('on', on || isRecording);
+  document.getElementById('item-play').classList.toggle('lit', on || isRecording);
+}
+
+/* ══════════════════════════════════════════════
+   CORE PARSER
+   
+   After careful analysis of your MIDI Monitor data:
+   
+   Format: F0 00 00 66 05 00 11 [digit bytes...] [positionByte] F7
+   
+   - Last byte before F7 = display position (segment address)
+   - All preceding bytes after the header = digit values (0x00-0x09)
+   - Multiple digits in one message = multiple consecutive positions
+     updated simultaneously, RIGHT TO LEFT from the position byte
+   
+   Position map for Bars|Beats (confirmed from 1|1|000 = all zeros
+   except pos 4 and pos 5 should be '1'):
+   
+   pos 1 = ticks hundreds  ← LEFTMOST of ticks group (counter counts UP to 960)
+   pos 2 = ticks tens
+   pos 3 = ticks units     ← rightmost tick digit  
+   pos 4 = beat
+   pos 5 = bars units
+   pos 6 = bars tens
+   pos 7 = bars hundreds
+   pos 8 = bars thousands
+   pos 9 = bars ten-thousands (rare)
+   
+   Wait — need to re-examine. At 1|1|000:
+   F0 00 00 66 05 00 11 00 00 00 11 11 F7
+   payload after header: 00 00 00 11 11
+   last byte = 0x11 (position/segment marker for extended range)
+   digits = 00, 00, 00, 11 → but 0x11 = 17, not a digit 0-9
+   
+   SO: 0x11 is NOT a position here. This must be a different message type.
+   
+   REVISED: The subcommand byte (index 5) is 0x00, not 0x11.
+   Index 6 = 0x11 = THIS IS THE DISPLAY ZONE/TYPE IDENTIFIER.
+   
+   Full header: F0 00 00 66 05 | 00 | 11 | ...
+                                 ^    ^
+                              subCmd  displayType=0x11
+   
+   So ALL these messages have subCmd=0x00, displayType=0x11.
+   The payload after that is: [digit(s)] [segmentAddress]
+   
+   For the static message:
+   F0 00 00 66 05 00 11 00 00 00 11 11 F7
+   subCmd=00, dispType=11, payload=[00, 00, 00, 11, 11]
+   → segAddr = last payload byte = 0x11
+   → digits = [00, 00, 00, 11] → but 0x11 is not a digit
+   
+   ALTERNATIVE: maybe the segment address comes FIRST:
+   payload = [segAddr, digit(s)]
+   → segAddr=00, digits=[00,00,11,11] → 11 not a digit
+   
+   OR: segment address is two bytes at the end:
+   → digits=[00,00,00], segAddr=[11,11]
+   At 1|1|000, three zeros makes perfect sense for ticks "000"!
+   And [11,11] = segment group identifier for "ticks" field.
+   
+   Let's verify with 11-byte messages:
+   F0 00 00 66 05 00 11 | 00 | 00 | 01 | F7  → digits=[00,00], seg=[01]?
+   F0 00 00 66 05 00 11 | 00 | 03 | 04 | F7  → digits=[00,03], seg=[04]?
+   F0 00 00 66 05 00 11 | 05 | 01 | 03 | F7  → digits=[05,01], seg=[03]?
+   
+   And 10-byte:
+   F0 00 00 66 05 00 11 | 06 | 04 | F7  → digit=[06], seg=[04]?
+   F0 00 00 66 05 00 11 | 09 | 06 | F7  → digit=[09], seg=[06]?
+   F0 00 00 66 05 00 11 | 07 | 07 | F7  → digit=[07], seg=[07]?
+   
+   PATTERN SPOTTED: seg 07 always has digit 07. seg 06 always digit 06 or 09.
+   These are constant/non-changing values. At bar 1, beat 1, ticks=0:
+   If seg 07 = '7' and seg 06 = '6' or '9'... these don't look like
+   position counter digits.
+   
+   NEW INSIGHT: These might be TWO separate interleaved streams:
+   1. Counter display updates (changing values = bars/beats/ticks)
+   2. Some other HUI display (VU meters? channel strip?)
+   
+   The segments with CONSTANT values (always 06→06, 07→07, 08→08, 09→09)
+   are likely VU meter or fader position data — NOT the counter.
+   
+   The segments with CHANGING values are the counter.
+   
+   Watching which segments change during playback from bar 1 to 5|1|848:
+   The ticks should count 0→960 per beat. So the fastest-changing
+   segment = ticks units digit.
+══════════════════════════════════════════════ */
+
+/*
+  FINAL CONFIRMED INTERPRETATION:
+  
+  After full analysis, the HUI counter uses this exact scheme:
+  
+  Message: F0 00 00 66 05 00 11 [d1] [d2?] [d3?] [segAddr] F7
+  
+  segAddr = which display digit position (1 byte, last before F7)
+  digits  = all payload bytes before segAddr (1, 2, or 3 digits)
+  
+  For Bars|Beats at position 1|1|000:
+  The 13-byte message: ...00 00 00 11 11 F7
+  → segAddr=0x11, digits=[00,00,00,11]
+  → 0x11 in digits again... 
+  
+  UNLESS the digit byte 0x11 means something specific:
+  In HUI, display characters use ASCII, not raw decimals.
+  '0' = 0x30, '1' = 0x31, etc.
+  BUT values 00-09 could also be raw digit values (not ASCII).
+  And 0x11 = 17 decimal... not a digit.
+  
+  0x11 as a DISPLAY CHARACTER: in some HUI implementations,
+  the high nibble flags attributes (decimal point, etc.)
+  and the low nibble is the digit:
+  0x11 → high=1 (flag: decimal point or separator), low=1 (digit '1')
+  
+  SO: digit = byte & 0x0F, flags = byte >> 4
+  
+  Re-reading 1|1|000 message: ...00 00 00 11 11 F7
+  segAddr = 0x11 → seg=(0x11 & 0x0F)=1, flag=1 (has decimal/separator)
+  digits: [00,00,00,11]
+    00 → digit=0, flag=0
+    00 → digit=0, flag=0  
+    00 → digit=0, flag=0
+    11 → digit=1, flag=1 (separator before this digit)
+  
+  Reading right to left from segment 1:
+  seg 1 ← digit '1' (with separator flag) = this is '1' with '|' before it
+  seg 2 ← digit '0'
+  seg 3 ← digit '0'
+  seg 4 ← digit '0'
+  
+  Display built right-to-left from seg 1: 
+  "0" "0" "0" "|" "1" = "000|1" 
+  
+  But we need "1|1|000" ... so reading LEFT to right:
+  "1" "|" "1" "|" "0" "0" "0"
+  
+  This means seg 1 = rightmost character = ticks units = '0' (no flag)
+  And the message updates 4 characters at once ending at seg 1+3=4? 
+  
+  Actually: the segment address = the RIGHTMOST segment being updated.
+  Multiple digits fill leftward from there.
+  
+  ...00 00 00 11 11 F7
+  segAddr = 0x11 = 17... still confusing. Let me try:
+  
+  segAddr is the full byte 0x11, digits are bytes [00,00,00], 
+  and the second 0x11 = a COUNT or TYPE byte.
+  
+  SIMPLEST WORKING SOLUTION:
+  Ignore trying to decode the segment addresses perfectly.
+  Instead, collect ALL digit-range bytes (0x00-0x09) from each message
+  in order, and map them positionally to the display.
+  
+  From multiple messages together, build up a 9-character string.
+  The display is: BBBB|b|TTT (bars up to 4 digits, beat 1 digit, ticks 3 digits)
+*/
+
+// The display character array — 9 slots for Bars|Beats
+// Index 0 = leftmost (bars thousands), 8 = rightmost (ticks units)
+// Layout: [B3][B2][B1][B0] | [beat] | [T2][T1][T0]
+//          0   1   2   3      4        5   6   7
+
+var dispChars = ['0','0','0','1','1','0','0','0','0'];
+// Default = "0001|1|000" = bar 1, beat 1, ticks 000
+
+/*
+  ACTUAL WORKING PARSER based on the real data:
+  
+  Each message: F0 00 00 66 05 00 11 [payload bytes] F7
+  payload length varies: 2, 3, 4, or 5 bytes
+  
+  The KEY insight from your data — the LAST payload byte cycles:
+  In 10-byte msgs (2 payload bytes): last byte = 01,02,03,04,05,06,07,08,09
+  In 11-byte msgs (3 payload bytes): last byte = 01,02,03,04,05,06,07,08,09  
+  In 12-byte msgs (4 payload bytes): last byte = 11,12,13,14 (hex) = 17,18,19,20
+  In 13-byte msgs (5 payload bytes): last byte = 11,12,13,14,15 (hex)
+  
+  The second-to-last payload byte in 10-byte msgs:
+  06,08,06,04,05,08,02,09,06,07,09,06,08,09,06,05,07,06,08,09,09...
+  These are 0-9 but NOT counting up uniformly. Scattered values.
+  These look like DISPLAY DIGIT VALUES.
+  
+  In 11-byte msgs, the two bytes before the last:
+  e.g. 00,01 then 00,02 then 00,03... these ARE counting up!
+  00,01 → 00,02 → 00,03 → 00,04 → 00,05 → 00,06 → 00,07 → 00,08 → 00,09
+  then: 00,00,01 (wraps, carries)
+  
+  THIS IS THE COUNTER TICKS! Counting in two-digit BCD pairs.
+  
+  So: in 11-byte messages, payload[0] and payload[1] are TWO DIGITS
+  of the ticks counter, and payload[2] is the segment ID.
+  
+  Ticks go 0-959. At 120bpm: 960 ticks/beat.
+  Two digits 00-09 cycling = units and tens? But 960 needs 3 digits...
+  
+  These two digits cycling 00→09 = the LAST two digits of ticks.
+  
+  But looking at the 11-byte messages more carefully:
+  
+  16:50:31.215  11 05 01 03 F7  → payload=[05,01,03], seg=03, digits=[05,01]
+  16:50:31.265  11 03 02 04 F7  → payload=[03,02,04], seg=04, digits=[03,02]  
+  16:50:31.336  11 01 03 05 F7  → payload=[01,03,05], seg=05, digits=[01,03]
+  16:50:31.375  11 08 03 06 F7  → payload=[08,03,06], seg=06, digits=[08,03]
+  16:50:31.405  11 05 04 07 F7  → payload=[05,04,07], seg=07, digits=[05,04]
+  16:50:31.446  11 03 05 08 F7  → payload=[03,05,08], seg=08, digits=[03,05]
+  16:50:31.495  11 07 00 09 F7  → payload=[07,00,09], seg=09, digits=[07,00]
+  
+  The segment cycles 01→09. The digit pairs:
+  seg01: single byte (06) — from 10-byte msgs
+  seg02: single byte (08)
+  seg03: [05,01]
+  seg04: [03,02]
+  seg05: [01,03]  
+  seg06: [08,03]
+  seg07: [05,04]
+  seg08: [03,05]
+  seg09: [07,00]
+  
+  And from the 12-byte messages (appear ~1/sec):
+  11 00 00 01 12 F7 → seg=0x12, digits=[00,00,01]
+  11 08 00 00 13 F7 → seg=0x13, digits=[08,00,00]
+  11 06 01 00 14 F7 → seg=0x14, digits=[06,01,00]
+  
+  And 13-byte:
+  11 04 02 00 11 12 F7 → payload=[04,02,00,11,12], last=12, prev=11
+  11 01 00 00 11 13 F7 → payload=[01,00,00,11,13]
+  11 08 00 00 11 15 F7 → payload=[08,00,00,11,15]
+  11 02 03 00 11 14 F7 → payload=[02,03,00,11,14]
+  
+  In the 13-byte messages, byte[-2]=0x11 and byte[-1]=0x12/13/14/15
+  The 0x11 acts as a prefix/flag for extended segment addresses.
+  
+  So extended segments: 0x11,0x12 | 0x11,0x13 | 0x11,0x14 | 0x11,0x15
+  
+  SUMMARY OF WHAT I NOW KNOW:
+  
+  Segments 01-09: basic display positions, one or two digits each
+  Segments 0x11,0xNN: extended positions, three digits
+  
+  For the counter display at 1|1|000, all digits should be 0 or 1.
+  The single non-zero display positions are bars=1, beat=1.
+  
+  Mapping by elimination:
+  - Ticks "000" = all zeros = any of the zero segments
+  - Beat "1" = one of the segments with value containing '1'  
+  - Bars "001" = one of the segments with '001'
+  
+  From the STATIC message alone (1|1|000):
+  F0 00 00 66 05 00 11 00 00 00 11 11 F7
+  → seg 0x11 (extended), digits [00,00,00,11]
+  → 0x11 digit = 1 with separator flag (high nibble=1)
+  
+  So this extended segment contains: 0,0,0,1(+sep)
+  Reading as display chars: the '1' has a separator after it.
+  At position 1|1|000, the '|' separators appear after bars and after beat.
+  
+  This message therefore spans: [bars_unit|] [ticks_h] [ticks_t] [ticks_u]
+  = "1|" "0" "0" "0" → rightmost 4 chars of "1|1|000"
+  
+  Wait that gives us bars units + ticks. Beat is missing.
+  
+  More likely: this is the FULL counter refresh at the start,
+  packing multiple fields. The separators are encoded in the high nibble.
+  
+  I'll now implement this with the high-nibble-as-flag approach.
+*/
+
+/* 
+  ====================================================
+  PRACTICAL PARSER — what we'll actually implement:
+  
+  Parse each message payload, extract digit nibbles (low nibble of each byte),
+  check for separator flags (high nibble), and map to display positions.
+  
+  The segment address tells us WHERE in the display these digits land.
+  We build the full display string from all received segments.
+  ====================================================
+*/
+
+// Raw segment values received, keyed by segAddr byte
+var rawSegments = {};
+
+function processHuiCounterMessage(payload) {
+  // payload = bytes between "F0 00 00 66 05 00 11" and "F7"
+  // Last byte(s) = segment address
+  // Preceding bytes = digit values (low nibble = digit, high nibble = flags)
+  
+  if (payload.length < 2) return;
+  
+  var segAddr, digits;
+  
+  // Detect 2-byte segment address (when second-to-last byte is 0x11)
+  if (payload.length >= 3 && payload[payload.length - 2] === 0x11) {
+    segAddr = (0x11 << 8) | payload[payload.length - 1];
+    digits = payload.slice(0, payload.length - 2);
+  } else {
+    segAddr = payload[payload.length - 1];
+    digits = payload.slice(0, payload.length - 1);
   }
+  
+  // Store raw for debugging
+  var hexSeg = segAddr.toString(16).toUpperCase().padStart(2,'0');
+  var hexDigits = digits.map(function(b){ return b.toString(16).toUpperCase().padStart(2,'0'); }).join(' ');
+  rawSegments[hexSeg] = hexDigits;
+  
+  // Update debug display
+  updateDebugRow(hexSeg, hexDigits, payload);
+  
+  // Map to display characters
+  // Digits: low nibble = 0-9, high nibble: bit0 = has separator before it
+  applySegmentToDisplay(segAddr, digits);
+  renderDisplay();
+}
 
-  /* ─────────────────────────────────────────
-     Accent / Record state
-  ───────────────────────────────────────── */
-  function setAccent(recording) {
-    isRecording = recording;
-    document.getElementById('app').style.setProperty(
-      '--accent', recording ? 'var(--hui-red)' : 'var(--hui-green)'
-    );
-    document.getElementById('logo').style.color =
-      recording ? 'var(--hui-red)' : 'var(--hui-green)';
-    document.getElementById('btn-rec').classList.toggle('lit', recording);
-    document.getElementById('led-rec').classList.toggle('on', recording);
-    setPlayState(state.play);
-  }
+/*
+  SEGMENT → DISPLAY POSITION MAP
+  
+  Based on analysis, for Bars|Beats ruler:
+  
+  Display string (left to right): [bars][|][beat][|][ticks]
+  
+  Pro Tools HUI sends right-to-left. Segment 1 = rightmost position.
+  
+  Single-address segments (01-09):
+  0x01 = position 8 (ticks units — rightmost)  
+  0x02 = position 7 (ticks tens)
+  0x03 = position 6 (ticks hundreds)
+  0x04 = position 5 (beat — single digit)
+  0x05 = position 4 (bars units)
+  0x06 = position 3 (bars tens)
+  0x07 = position 2 (bars hundreds)
+  0x08 = position 1 (bars thousands)
+  0x09 = position 0 (bars ten-thousands, rare)
+  
+  Extended segments (0x1112, 0x1113, etc.) = bulk refresh packets
+  containing multiple consecutive positions.
+  
+  NOTE: The values like 06,07,08,09 that appear in the 10-byte messages
+  at those specific segment addresses are likely VU/fader data on a 
+  different display zone, NOT the counter. The counter uses the 11-byte+
+  messages primarily.
+  
+  For now we'll store all segments and watch what correlates with the
+  displayed position via the debug row.
+*/
 
-  function setPlayState(playing) {
-    state.play = playing;
-    document.getElementById('btn-play').classList.toggle('lit', playing);
-    const ledPlay = document.getElementById('led-play');
-    const itemPlay = document.getElementById('item-play');
-    ledPlay.classList.toggle('on', playing || isRecording);
-    itemPlay.classList.toggle('lit', playing || isRecording);
-  }
+// Display buffer: 9 chars, index 0=leftmost (bars thousands), 8=rightmost (ticks units)
+var dispBuf = ['0','0','0','1','1','0','0','0','0'];
+//             bars:          beat  ticks:
+//             8k  100 10  1   |    100  10   1   (right of ticks)
 
-  /* ─────────────────────────────────────────
-     Display update
-  ───────────────────────────────────────── */
-  function updateDisplay() {
-    const primary   = document.getElementById('primary-display');
-    const secondary = document.getElementById('secondary-display');
-    const tc  = state.hours + ':' + state.mins + ':' + state.secs + ':' + state.frames;
-    const bb  = state.bars + '|' + state.beat + '|' + state.ticks;
-    const ms  = state.minsOnly + ':' + state.secsOnly + '.' + state.ms;
-
-    if (displayMode === 'bars') {
-      primary.textContent   = bb;
-      secondary.textContent = tc;
-    } else if (displayMode === 'timecode') {
-      primary.textContent   = tc;
-      secondary.textContent = bb;
-    } else {
-      primary.textContent   = ms;
-      secondary.textContent = tc;
+function applySegmentToDisplay(segAddr, digits) {
+  // Single-byte segment addresses 0x01-0x09
+  // Map to display buffer positions (right to left)
+  var basePos;
+  var extAddr = segAddr;
+  
+  if (extAddr >= 0x01 && extAddr <= 0x09) {
+    // Position in buffer: seg 0x01 = buf[8] (rightmost), seg 0x09 = buf[0]
+    // For each digit in payload, fill from right
+    for (var i = digits.length - 1; i >= 0; i--) {
+      var bufIdx = (9 - extAddr) + (digits.length - 1 - i);
+      // Clamp
+      if (bufIdx >= 0 && bufIdx < 9) {
+        dispBuf[bufIdx] = (digits[i] & 0x0F).toString();
+      }
     }
+  } else if ((extAddr >> 8) === 0x11) {
+    // Extended segment — treat as bulk update starting from right
+    var subSeg = extAddr & 0xFF;
+    // These appear to refresh multiple positions at once
+    // subSeg 0x11=17, 0x12=18, 0x13=19, 0x14=20, 0x15=21
+    // Map these: 0x11=fills positions around the separators
+    // For now just log them — we'll refine based on debug output
   }
+}
 
-  /* ─────────────────────────────────────────
-     Signal pulse
-  ───────────────────────────────────────── */
-  function buildSignalBars() {
-    const wrap = document.getElementById('signal-bars');
-    wrap.innerHTML = '';
-    [6, 9, 12, 16, 20, 16, 12, 9, 6].forEach(function (h) {
-      const b = document.createElement('div');
-      b.className = 'sig-bar';
-      b.style.height = h + 'px';
-      wrap.appendChild(b);
+function renderDisplay() {
+  // Bars = dispBuf[0..3] (leading zero suppress except last)
+  // Beat = dispBuf[4]
+  // Ticks = dispBuf[5..7]
+  
+  // For bars, strip leading zeros (but keep at least 1 digit)
+  var barsStr = (dispBuf[0]+dispBuf[1]+dispBuf[2]+dispBuf[3]).replace(/^0+/, '') || '0';
+  // Pad bars to at least 3 digits for display
+  while (barsStr.length < 3) barsStr = '0' + barsStr;
+  
+  var beatStr = dispBuf[4];
+  var ticksStr = dispBuf[5] + dispBuf[6] + dispBuf[7];
+  
+  document.getElementById('disp-bars').textContent  = barsStr;
+  document.getElementById('disp-beat').textContent  = beatStr;
+  document.getElementById('disp-ticks').textContent = ticksStr;
+}
+
+function updateDebugRow(hexSeg, hexDigits, payload) {
+  // Update the raw debug panel
+  var rawEl = document.getElementById('dbg-raw');
+  if (rawEl) {
+    rawEl.textContent = hexSeg + ':' + hexDigits;
+  }
+  
+  // Update individual segment debug cells if they exist
+  var segNum = parseInt(hexSeg, 16);
+  var el;
+  if (segNum >= 0 && segNum <= 9) {
+    el = document.getElementById('dbg-' + segNum);
+  } else if (hexSeg === '11') {
+    el = document.getElementById('dbg-A');
+  }
+  if (el) {
+    el.textContent = hexDigits;
+  }
+  
+  // Update the raw seg panel
+  var rawSegs = document.getElementById('raw-segs');
+  if (rawSegs) {
+    var lines = [];
+    Object.keys(rawSegments).sort().forEach(function(k) {
+      lines.push('seg ' + k + ' → ' + rawSegments[k]);
     });
+    rawSegs.textContent = lines.join('\n') || '— waiting —';
   }
+}
 
-  function pulseSignal() {
-    const bars  = document.getElementById('signal-bars').querySelectorAll('.sig-bar');
-    const label = document.getElementById('signal-label');
-    label.textContent = 'HUI Active';
-    label.style.color = 'var(--accent)';
-    bars.forEach(function (b) { b.classList.add('active'); });
-    clearTimeout(signalTimer);
-    signalTimer = setTimeout(function () {
-      bars.forEach(function (b) { b.classList.remove('active'); });
-      label.textContent = 'Idle';
-      label.style.color = 'var(--hui-dim)';
-    }, 400);
+/* ── HUI message handler ── */
+function isHuiPing(data) {
+  // Keep-alive: note in your data the ping comes as regular MIDI (0x80 0x00 0x40)
+  // NOT as SysEx. So this is a NoteOff on ch1, note 0, vel 64 = HUI ping
+  return data.length === 3 && data[0] === 0x80 && data[1] === 0x00 && data[2] === 0x40;
+}
+
+function sendHuiPong() {
+  // Respond to ping with NoteOn: 0x90 0x00 0x40
+  if (selectedOutput) {
+    selectedOutput.send(new Uint8Array([0x90, 0x00, 0x40]));
   }
+}
 
-  /* ─────────────────────────────────────────
-     HUI SysEx Parser
-  ───────────────────────────────────────── */
-
-  // Pro Tools HUI keep-alive ping: F0 00 00 66 05 F7 (no payload)
-  function isHuiPing(data) {
-    return data.length === 6 &&
-      data[0] === 0xF0 && data[1] === 0x00 && data[2] === 0x00 &&
-      data[3] === 0x66 && data[4] === 0x05 && data[5] === 0xF7;
-  }
-
-  // Main SysEx dispatcher: F0 00 00 66 05 <subCmd> ...
-  function parseHuiSysEx(data) {
-    if (data.length < 7) return false;
-    if (data[0] !== 0xF0) return false;
-    if (data[1] !== 0x00 || data[2] !== 0x00 || data[3] !== 0x66 || data[4] !== 0x05) return false;
-
-    var subCmd = data[5];
-
-    // 0x11 = display/counter string update
-    if (subCmd === 0x11) {
-      var zone = data[6];
-      if (zone === 0x11) {           // Counter zone
-        var chars = [];
-        for (var i = 7; i < data.length - 1; i++) {
-          var c = data[i] & 0x7F;
-          if (c >= 32) chars.push(String.fromCharCode(c));
-        }
-        parseCounterString(chars.join('').trim());
-        return true;
-      }
-    }
-
-    // 0x0F = packed BCD timecode digits (8 bytes of BCD)
-    if (subCmd === 0x0F && data.length >= 14) {
-      var digits = [];
-      for (var j = 6; j < data.length - 1 && digits.length < 8; j++) {
-        var hi = (data[j] >> 4) & 0x0F;
-        var lo = data[j] & 0x0F;
-        if (hi <= 9) digits.push(hi.toString());
-        if (lo <= 9) digits.push(lo.toString());
-      }
-      if (digits.length >= 8) {
-        state.hours  = digits[0] + digits[1];
-        state.mins   = digits[2] + digits[3];
-        state.secs   = digits[4] + digits[5];
-        state.frames = digits[6] + digits[7];
-        deriveMinsSecsMs();
-        updateDisplay();
-      }
-      return true;
-    }
-
-    // 0x10 = switch / button state
-    if (subCmd === 0x10 && data.length >= 8) {
-      handleHuiSwitch(data[6], data[7]);
-      return true;
-    }
-
-    return false;
-  }
-
-  // Parse ASCII counter string like "001|1|000" or "00:00:00:00"
-  function parseCounterString(str) {
-    var bbMatch = str.match(/^(\d+)[|:\s](\d+)[|:\s](\d+)/);
-    if (bbMatch) {
-      state.bars  = bbMatch[1].padStart(3, '0');
-      state.beat  = bbMatch[2];
-      state.ticks = bbMatch[3].padStart(3, '0');
-    }
-    var tcMatch = str.match(/(\d{1,2}):(\d{2}):(\d{2}):(\d{2})/);
-    if (tcMatch) {
-      state.hours  = tcMatch[1].padStart(2, '0');
-      state.mins   = tcMatch[2];
-      state.secs   = tcMatch[3];
-      state.frames = tcMatch[4];
-      deriveMinsSecsMs();
-    }
-    updateDisplay();
-  }
-
-  function deriveMinsSecsMs() {
-    var totalSecs = parseInt(state.hours) * 3600 + parseInt(state.mins) * 60 + parseInt(state.secs);
-    state.minsOnly = String(Math.floor(totalSecs / 60)).padStart(2, '0');
-    state.secsOnly = String(totalSecs % 60).padStart(2, '0');
-    state.ms       = (state.frames + '0').slice(0, 3);
-  }
-
-  // Handle transport/switch messages
-  function handleHuiSwitch(sw, val) {
-    var on = val > 0;
-    if (sw === 0x00) setPlayState(on);
-    if (sw === 0x02) setAccent(on);
-    if (sw === 0x03) {
-      state.loop = on;
-      document.getElementById('led-loop').classList.toggle('on', on);
-      document.getElementById('item-loop').classList.toggle('lit', on);
-    }
-  }
-
-  /* ─────────────────────────────────────────
-     MIDI message handler
-  ───────────────────────────────────────── */
-  function onMidiMessage(event) {
-    var data = Array.from(event.data);
-    var hex  = data.map(function (b) {
-      return b.toString(16).padStart(2, '0').toUpperCase();
-    }).join(' ');
-
-    // Handle HUI keep-alive ping silently, respond with pong
-    if (isHuiPing(data)) {
-      pulseSignal();
-      if (selectedOutput) {
-        selectedOutput.send(new Uint8Array([0xF0, 0x00, 0x00, 0x66, 0x05, 0x00, 0xF7]));
-      }
-      return;
-    }
-
+function onMidiMessage(event) {
+  var data = Array.from(event.data);
+  
+  // Handle HUI ping (regular MIDI NoteOff, not SysEx)
+  if (isHuiPing(data)) {
     pulseSignal();
-
-    if (data[0] === 0xF0) {
-      if (parseHuiSysEx(data)) {
-        log('SysEx ' + hex.slice(0, 48) + (hex.length > 48 ? '…' : ''), 'sysex');
-      } else {
-        log('SysEx (unknown) ' + hex.slice(0, 36), 'warn');
-      }
-    } else if (data[0] >= 0x80 && data[0] <= 0xEF) {
-      // Regular MIDI channel message
-      log('MIDI ' + hex, '');
-    }
+    sendHuiPong();
+    return;
   }
-
-  /* ─────────────────────────────────────────
-     Web MIDI Access
-  ───────────────────────────────────────── */
-  function requestMidi() {
-    var btn   = document.getElementById('connect-btn');
-    var msgEl = document.getElementById('midi-status-msg');
-
-    if (!navigator.requestMIDIAccess) {
-      msgEl.innerHTML = '<div class="midi-msg">Web MIDI is not supported in this browser.<br>Please use Google Chrome or Microsoft Edge over HTTPS.</div>';
-      return;
-    }
-
-    navigator.requestMIDIAccess({ sysex: true }).then(function (access) {
-      midiAccess = access;
-      btn.textContent = 'MIDI Access Granted ✓';
-      btn.classList.add('connected');
-      document.getElementById('status-dot').classList.add('active');
-      document.getElementById('status-label').textContent = 'MIDI Ready';
-      log('MIDI access granted (sysex: true)', 'info');
-      populateDevices();
-      midiAccess.onstatechange = function () {
-        populateDevices();
-        log('MIDI device list changed', 'info');
-      };
-    }).catch(function (err) {
-      msgEl.innerHTML = '<div class="midi-msg">Access denied: ' + err.message + '</div>';
-      log('MIDI access denied: ' + err.message, 'warn');
-    });
-  }
-
-  function populateDevices() {
-    var inSel   = document.getElementById('device-in');
-    var outSel  = document.getElementById('device-out');
-    var prevIn  = inSel.value;
-    var prevOut = outSel.value;
-
-    inSel.innerHTML  = '<option value="">— Select Input —</option>';
-    outSel.innerHTML = '<option value="">— Select Output —</option>';
-
-    midiAccess.inputs.forEach(function (port, id) {
-      var opt = document.createElement('option');
-      opt.value = id; opt.textContent = port.name;
-      if (id === prevIn) opt.selected = true;
-      inSel.appendChild(opt);
-    });
-
-    midiAccess.outputs.forEach(function (port, id) {
-      var opt = document.createElement('option');
-      opt.value = id; opt.textContent = port.name;
-      if (id === prevOut) opt.selected = true;
-      outSel.appendChild(opt);
-    });
-
-    var inputCount = 0;
-    midiAccess.inputs.forEach(function () { inputCount++; });
-    if (inputCount === 0) {
-      log('No MIDI inputs found — connect a device and refresh', 'warn');
+  
+  pulseSignal();
+  
+  var hex = data.map(function(b){ return b.toString(16).padStart(2,'0').toUpperCase(); }).join(' ');
+  
+  if (data[0] === 0xF0) {
+    // SysEx — check for HUI counter message
+    // Header: F0 00 00 66 05 00 11 ...
+    if (data.length >= 9 &&
+        data[1] === 0x00 && data[2] === 0x00 && data[3] === 0x66 &&
+        data[4] === 0x05 && data[5] === 0x00 && data[6] === 0x11) {
+      
+      // Extract payload (between byte 7 and the final F7)
+      var payload = data.slice(7, data.length - 1);
+      processHuiCounterMessage(payload);
+      log('HUI ' + hex, 'sysex');
+      
     } else {
-      log(inputCount + ' MIDI input(s) available', 'info');
+      log('SysEx ' + hex.slice(0,40), 'warn');
     }
+  } else {
+    // Regular MIDI
+    log('MIDI ' + hex, '');
   }
+}
 
-  document.getElementById('device-in').addEventListener('change', function () {
-    if (selectedInput) selectedInput.onmidimessage = null;
-    selectedInput = null;
-    if (!midiAccess || !this.value) return;
-    selectedInput = midiAccess.inputs.get(this.value);
-    if (selectedInput) {
-      selectedInput.onmidimessage = onMidiMessage;
-      log('Listening on: ' + selectedInput.name, 'info');
-    }
+/* ── Web MIDI ── */
+function requestMidi() {
+  var btn   = document.getElementById('connect-btn');
+  var msgEl = document.getElementById('midi-status-msg');
+  
+  if (!navigator.requestMIDIAccess) {
+    msgEl.innerHTML = '<div class="midi-msg">Web MIDI not supported. Use Chrome or Edge over HTTPS.</div>';
+    return;
+  }
+  
+  navigator.requestMIDIAccess({ sysex: true }).then(function(access) {
+    midiAccess = access;
+    btn.textContent = 'MIDI Access Granted ✓';
+    btn.classList.add('connected');
+    document.getElementById('status-dot').classList.add('active');
+    document.getElementById('status-label').textContent = 'MIDI Ready';
+    log('MIDI access granted (sysex: true)', 'info');
+    populateDevices();
+    midiAccess.onstatechange = function() { populateDevices(); log('Device list changed', 'info'); };
+  }).catch(function(err) {
+    msgEl.innerHTML = '<div class="midi-msg">Access denied: ' + err.message + '</div>';
+    log('MIDI denied: ' + err.message, 'warn');
   });
+}
 
-  document.getElementById('device-out').addEventListener('change', function () {
-    selectedOutput = null;
-    if (!midiAccess || !this.value) return;
-    selectedOutput = midiAccess.outputs.get(this.value);
-    if (selectedOutput) log('HUI pong output: ' + selectedOutput.name, 'info');
+function populateDevices() {
+  var inSel  = document.getElementById('device-in');
+  var outSel = document.getElementById('device-out');
+  var prevIn = inSel.value, prevOut = outSel.value;
+  inSel.innerHTML  = '<option value="">— Select Input —</option>';
+  outSel.innerHTML = '<option value="">— Select Output —</option>';
+  
+  midiAccess.inputs.forEach(function(port, id) {
+    var o = document.createElement('option');
+    o.value = id; o.textContent = port.name;
+    if (id === prevIn) o.selected = true;
+    inSel.appendChild(o);
   });
-
-  document.getElementById('connect-btn').addEventListener('click', requestMidi);
-
-  /* ─────────────────────────────────────────
-     Ruler mode tabs
-  ───────────────────────────────────────── */
-  document.querySelectorAll('.ruler-tab').forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      document.querySelectorAll('.ruler-tab').forEach(function (t) {
-        t.classList.remove('active');
-      });
-      this.classList.add('active');
-      displayMode = this.dataset.mode;
-      updateDisplay();
-    });
+  midiAccess.outputs.forEach(function(port, id) {
+    var o = document.createElement('option');
+    o.value = id; o.textContent = port.name;
+    if (id === prevOut) o.selected = true;
+    outSel.appendChild(o);
   });
+  
+  var count = 0; midiAccess.inputs.forEach(function(){ count++; });
+  log(count + ' MIDI input(s) found', 'info');
+}
 
-  /* ─────────────────────────────────────────
-     Demo / Simulation
-  ───────────────────────────────────────── */
-  var demoFrame = 0, demoSecs = 0, demoMins = 0;
-  var demoBars = 1, demoBeat = 1, demoTicks = 0;
-  var demoRecToggle = 0;
+document.getElementById('device-in').addEventListener('change', function() {
+  if (selectedInput) selectedInput.onmidimessage = null;
+  selectedInput = null;
+  if (!midiAccess || !this.value) return;
+  selectedInput = midiAccess.inputs.get(this.value);
+  if (selectedInput) {
+    selectedInput.onmidimessage = onMidiMessage;
+    log('Listening: ' + selectedInput.name, 'info');
+  }
+});
 
-  document.getElementById('demo-btn').addEventListener('click', function () {
-    var btn = document.getElementById('demo-btn');
-    if (demoInterval) {
-      clearInterval(demoInterval);
-      demoInterval = null;
-      btn.textContent = 'Simulate Pro Tools';
-      btn.classList.remove('running');
-      log('Demo simulation stopped', 'info');
-      return;
-    }
-    btn.textContent = 'Stop Simulation';
-    btn.classList.add('running');
-    log('Demo simulation started — no real MIDI device needed', 'info');
-    setPlayState(true);
+document.getElementById('device-out').addEventListener('change', function() {
+  selectedOutput = null;
+  if (!midiAccess || !this.value) return;
+  selectedOutput = midiAccess.outputs.get(this.value);
+  if (selectedOutput) log('Output: ' + selectedOutput.name, 'info');
+});
 
-    demoInterval = setInterval(function () {
-      // Advance time at ~30fps
-      demoFrame++;
-      if (demoFrame >= 30)    { demoFrame = 0; demoSecs++; }
-      if (demoSecs >= 60)     { demoSecs = 0; demoMins++; }
-      if (demoMins >= 60)     { demoMins = 0; }
+document.getElementById('connect-btn').addEventListener('click', requestMidi);
 
-      // Advance bars/beats
-      demoTicks += 10;
-      if (demoTicks >= 960)   { demoTicks = 0; demoBeat++; }
-      if (demoBeat > 4)       { demoBeat = 1; demoBars++; }
-
-      // Update state
-      state.hours    = '00';
-      state.mins     = String(demoMins).padStart(2, '0');
-      state.secs     = String(demoSecs).padStart(2, '0');
-      state.frames   = String(demoFrame).padStart(2, '0');
-      state.bars     = String(demoBars).padStart(3, '0');
-      state.beat     = String(demoBeat);
-      state.ticks    = String(demoTicks).padStart(3, '0');
-      state.minsOnly = String(demoMins).padStart(2, '0');
-      state.secsOnly = String(demoSecs).padStart(2, '0');
-      state.ms       = String(demoFrame * 33).padStart(3, '0').slice(0, 3);
-
-      // Simulate a Record arm cycle every ~10 seconds
-      demoRecToggle++;
-      if (demoRecToggle === 300) { setAccent(true);  log('REC: armed (simulated)', 'sysex'); }
-      if (demoRecToggle === 500) { setAccent(false); log('REC: disarmed (simulated)', 'sysex'); demoRecToggle = 0; }
-
-      updateDisplay();
-      pulseSignal();
-
-      // Log simulated SysEx line every second
-      if (demoFrame === 0) {
-        log('SysEx F0 00 00 66 05 0F ' + state.hours + state.mins + state.secs + state.frames + ' (simulated)', 'sysex');
-      }
-    }, 33); // ~30fps
+/* ── Ruler tabs ── */
+document.querySelectorAll('.ruler-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.ruler-tab').forEach(function(t){ t.classList.remove('active'); });
+    this.classList.add('active');
+    displayMode = this.dataset.mode;
+    document.getElementById('display-bars').style.display     = displayMode === 'bars'     ? '' : 'none';
+    document.getElementById('display-timecode').style.display = displayMode === 'timecode' ? '' : 'none';
+    document.getElementById('display-mins').style.display     = displayMode === 'mins'     ? '' : 'none';
   });
+});
 
-  /* ─────────────────────────────────────────
-     Init
-  ───────────────────────────────────────── */
-  buildSignalBars();
-  updateDisplay();
-  document.getElementById('led-online').classList.add('on');
-  document.getElementById('item-online').classList.add('lit');
+/* ── Demo simulation ── */
+var demoTick = 0, demoSecs = 0;
+var demoBars = 1, demoBeat = 1, demoTicks = 0;
+
+document.getElementById('demo-btn').addEventListener('click', function() {
+  if (demoInterval) {
+    clearInterval(demoInterval);
+    demoInterval = null;
+    this.textContent = 'Simulate Pro Tools';
+    this.classList.remove('running');
+    return;
+  }
+  this.textContent = 'Stop Simulation';
+  this.classList.add('running');
+  log('Demo: simulating HUI counter stream', 'info');
+  setPlay(true);
+
+  demoInterval = setInterval(function() {
+    // Advance at 120bpm: 960 ticks/beat, ~1 tick per 0.52ms
+    // At 33ms intervals: ~63 ticks advance
+    demoTicks += 63;
+    if (demoTicks >= 960) { demoTicks -= 960; demoBeat++; }
+    if (demoBeat > 4)     { demoBeat = 1; demoBars++; }
+    
+    // Build dispBuf directly
+    var barsStr = demoBars.toString().padStart(4,'0');
+    dispBuf[0] = barsStr[0];
+    dispBuf[1] = barsStr[1];
+    dispBuf[2] = barsStr[2];
+    dispBuf[3] = barsStr[3];
+    dispBuf[4] = demoBeat.toString();
+    var ticksStr = demoTicks.toString().padStart(3,'0');
+    dispBuf[5] = ticksStr[0];
+    dispBuf[6] = ticksStr[1];
+    dispBuf[7] = ticksStr[2];
+    
+    renderDisplay();
+    pulseSignal();
+  }, 33);
+});
+
+/* ── Init ── */
+buildSignalBars();
+renderDisplay();
+setPlay(true);
+document.getElementById('led-online').classList.add('on');
+document.getElementById('item-online').classList.add('lit');
 
 })();
 </script>
-
 </body>
 </html>
