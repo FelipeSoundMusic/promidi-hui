@@ -304,6 +304,18 @@ function parseHui(data) {
     decoded.push(d);
   }
 
+  /* Manual position jump detection:
+     When the user types a bar number, Pro Tools sends a message where
+     the 3 ticks prefix bytes are ALL 0x00 (ticks reset to zero).
+     During playback, ticks are counting so the prefix bytes are non-zero.
+     If ticks are all zero AND we have 2+ counter bytes: manual jump.
+     Zero register positions above what was sent to clear stale high digits.
+     Single-byte beat-only messages never trigger a reset. */
+  var ticksAllZero = (payload[0]===0x00 && payload[1]===0x00 && payload[2]===0x00);
+  if (decoded.length >= 2 && ticksAllZero) {
+    for (var k = decoded.length; k < reg.length; k++) reg[k] = 0;
+  }
+
   /* Write decoded digits into register (partial update: only positions present) */
   for (var j = 0; j < decoded.length && j < reg.length; j++) {
     reg[j] = decoded[j];
