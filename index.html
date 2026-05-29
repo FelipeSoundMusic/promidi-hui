@@ -353,15 +353,25 @@ function parseHui(data) {
      If ticks are all zero AND we have 2+ counter bytes: manual jump.
      Zero register positions above what was sent to clear stale high digits.
      Single-byte beat-only messages never trigger a reset. */
+  /* Manual position jump detection.
+     We use TWO signals that must BOTH be true:
+       1. Ticks are all zero (Pro Tools resets ticks on manual entry)
+       2. More than 400ms has elapsed since the last valid message
+          (manual input always takes at least 500ms; even slow-tempo
+          playback sends messages every 30-50ms so gap stays small)
+     Using both signals prevents false triggers at bar boundaries where
+     ticks genuinely hit zero during slow-tempo playback.
+
+     Additionally, for 2-byte messages we check pos1 encoding:
+       pos1 >= 0x10 = Bars bar-ones (reset ok)
+       pos1 <  0x10 = Mins:Secs sec-tens (never reset minutes) */
   var ticksAllZero = (payload[0]===0x00 && payload[1]===0x00 && payload[2]===0x00);
-  /* Reset higher positions on a manual position jump (ticks all zero).
-     Threshold: 2+ counter bytes BUT only if pos1 byte is offset-encoded
-     (>= 0x10), which means it's a Bars message (bar-ones) not a
-     Mins:Secs seconds-only message (sec-tens = raw 0x00-0x09).
-     This lets "bar 5" (2 bytes, pos1=0x15) reset stale tens/hundreds,
-     while "type 58 seconds" (2 bytes, pos1=0x05) leaves minutes intact. */
+  var now = Date.now();
+  var gap = now - (parseHui._t || 0);
+  parseHui._t = now;
+  var longGap = gap > 400;
   var pos1IsOffset = (counterBytes.length >= 2 && counterBytes[1] >= 0x10);
-  if (decoded.length >= 2 && ticksAllZero && (decoded.length >= 3 || pos1IsOffset)) {
+  if (decoded.length >= 2 && ticksAllZero && longGap && (decoded.length >= 3 || pos1IsOffset)) {
     for (var k = decoded.length; k < reg.length; k++) reg[k] = 0;
   }
 
@@ -391,15 +401,67 @@ function parseHui(data) {
   return true;
 }
 
+/* HUI switch state: zone set by B0 0C <zone>, then port+value by B0 2C <val>
+   High nibble of val: 4=ON 0=OFF. Low nibble = port number.
+   Zone 0x0E port 3 = Record transport button.
+
+   Pro Tools sends multiple zone 0x0E messages in rapid succession for
+   different ports during state refreshes. We debounce by collecting
+   all record state changes within a 80ms window and applying only the
+   last one — this gives the settled final state. */
+var huiZone = -1;
+var recDebounceTimer = null;
+var recPendingState = null;
+var recCurrentState = false;
+
+function applyRecordState(on) {
+  if (on !== recCurrentState) {
+    recCurrentState = on;
+    setAccent(on);
+    log('Record ' + (on ? 'ON' : 'OFF'), 'info');
+  }
+}
+
 function onMidi(event) {
   var data = Array.from(event.data);
+
+  /* HUI keep-alive ping */
   if (data.length===3 && data[0]===0x80 && data[1]===0x00 && data[2]===0x40) {
     pulse();
     if (selOut) selOut.send(new Uint8Array([0x90,0x00,0x40]));
     return;
   }
+
   pulse();
   var hex = data.map(function(b){ return b.toString(16).toUpperCase().padStart(2,'0'); }).join(' ');
+
+  /* HUI CC switch messages (per Mackie HUI protocol doc).
+     Zone select : B0 0C zz (transmit form) or B0 0F zz (receive form)
+     Port on/off : B0 2C <val> or B0 2F <val>; high nibble 4=ON 0=OFF, low nibble=port
+
+     Zone 0x0E = "transporter main (big switches)":
+       port 1=rewind  2=fast-fwd  3=stop  4=play  5=record
+     We track port 5 (record) and port 4 (play). */
+  if (data.length===3 && data[0]===0xB0) {
+    if (data[1]===0x0C || data[1]===0x0F) {
+      huiZone = data[2];
+    } else if ((data[1]===0x2C || data[1]===0x2F) && huiZone >= 0) {
+      var port = data[2] & 0x0F;
+      var on   = (data[2] & 0xF0) !== 0;
+      if (huiZone === 0x0E && port === 5) {
+        /* Record LED. Debounce rapid refresh bursts; apply settled state. */
+        recPendingState = on;
+        clearTimeout(recDebounceTimer);
+        recDebounceTimer = setTimeout(function() {
+          applyRecordState(recPendingState);
+        }, 80);
+      }
+      huiZone = -1;
+    }
+    if (!sysexOnly) log('MIDI '+hex, '');
+    return;
+  }
+
   if (data[0] === 0xF0) {
     var ok = parseHui(data);
     log('SysEx '+hex, ok ? 'sx' : 'warn');
