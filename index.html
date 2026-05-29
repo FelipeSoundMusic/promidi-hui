@@ -202,6 +202,7 @@
 var reg = [1, 1, 0, 0, 0];
 
 var displayMode = 'bars';
+var autoRuler = true; /* auto-switch ruler tab to match Pro Tools */
 var midiAccess = null, selIn = null, selOut = null;
 var isRec = false, sigTimer = null, demoInt = null;
 var sysexOnly = true;
@@ -315,8 +316,9 @@ function decodeCounterByte(b, pos) {
     if (b >= 0x00 && b <= 0x09) return b;
     return -1;
   }
-  /* pos >= 5: raw */
+  /* pos >= 5: raw digit, tolerate decimal-point flag (0x10 bit) for timecode */
   if (b >= 0x00 && b <= 0x09) return b;
+  if (b >= 0x10 && b <= 0x19) return b - 0x10;
   return -1;
 }
 
@@ -337,6 +339,31 @@ function parseHui(data) {
 
   /* Ignore keep-alive (first byte is 0x30) */
   if (counterBytes[0] === 0x30) return true;
+
+  /* ── RULER AUTO-DETECTION ──
+     Each ruler lights different decimal points (the 0x10 bit on a digit
+     byte = that digit's decimal point is lit). The point positions are
+     the field separators on the LED, giving each ruler a fingerprint:
+       Bars|Beats : points at digit y0 and y1            (e.g. 11 15 02 01)
+       Mins:Secs  : points at digit y0 and y2            (e.g. 10 00 13)
+       Timecode   : points at digit y2, y4, y6           (e.g. ..13 02 11 00 10 00)
+     We only re-detect from messages long enough to carry the fingerprint
+     (3+ counter bytes), so short beat-only updates don't disturb it. */
+  if (autoRuler && counterBytes.length >= 3) {
+    var dp = []; /* positions with decimal point lit */
+    for (var p = 0; p < counterBytes.length; p++) {
+      if ((counterBytes[p] & 0x10) && (counterBytes[p] & 0x0F) <= 0x09) dp.push(p);
+    }
+    var detected = null;
+    if (dp.indexOf(4) >= 0 || dp.indexOf(6) >= 0) {
+      detected = 'timecode';            /* points high up = HH:MM:SS:FF colons */
+    } else if (dp.indexOf(2) >= 0) {
+      detected = 'mins';                /* point at y2 = M:SS separator */
+    } else if (dp.indexOf(1) >= 0) {
+      detected = 'bars';                /* point at y1 = bar|beat separator */
+    }
+    if (detected) setRuler(detected);
+  }
 
   /* Validate and decode each counter byte */
   var decoded = [];
@@ -528,13 +555,21 @@ document.getElementById('clbtn').addEventListener('click', function(){
   document.getElementById('log').innerHTML='<div class="ll info">— Log cleared —</div>';
 });
 
+/* Switch the active ruler tab + display. mode = 'bars' | 'timecode' | 'mins' */
+function setRuler(mode) {
+  if (mode === displayMode) return;
+  displayMode = mode;
+  document.querySelectorAll('.rtab').forEach(function(x){
+    x.classList.toggle('active', x.dataset.mode === mode);
+  });
+  document.getElementById('disp-bars').style.display = mode==='bars'?'':'none';
+  document.getElementById('disp-tc').style.display   = mode==='timecode'?'':'none';
+  document.getElementById('disp-ms').style.display   = mode==='mins'?'':'none';
+}
+
 document.querySelectorAll('.rtab').forEach(function(t){
   t.addEventListener('click', function(){
-    document.querySelectorAll('.rtab').forEach(function(x){ x.classList.remove('active'); });
-    this.classList.add('active'); displayMode=this.dataset.mode;
-    document.getElementById('disp-bars').style.display = displayMode==='bars'?'':'none';
-    document.getElementById('disp-tc').style.display   = displayMode==='timecode'?'':'none';
-    document.getElementById('disp-ms').style.display   = displayMode==='mins'?'':'none';
+    setRuler(this.dataset.mode);
   });
 });
 
