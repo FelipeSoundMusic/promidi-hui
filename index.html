@@ -318,13 +318,14 @@ function fieldValue(f) {
    ordinary playback is unaffected.
 
    Pro Tools also periodically sends a filler/keep-alive variant
-   while parked at a static position, using 0x30 in beat's position
-   (byte & 0x0F = 0, byte & 0x10 = dp -- i.e. "beat 0 with a decimal
-   point", which is otherwise impossible since beats start at 1).
-   That message carries no real data and is ignored outright. */
+   while parked at a static position, by BLANKING beat's position
+   (byte 0x30 = blank + dp + value 0 -- see the blank-flag comment in
+   parseHui). That message carries no real data and is ignored
+   outright. */
 function decodeBarsDigits(decoded) {
-  if (decoded.length > 3 && decoded[3].v === 0 && decoded[3].dp) return; /* 0x30 filler -- ignore */
-  var ticksZero = decoded.length >= 3 && decoded[0].v === 0 && decoded[1].v === 0 && decoded[2].v === 0;
+  if (decoded.length > 3 && decoded[3] === null) return; /* beat blanked -- idle keep-alive, ignore */
+  var ticksZero = decoded.length >= 3 && decoded[0] && decoded[0].v === 0 &&
+                   decoded[1] && decoded[1].v === 0 && decoded[2] && decoded[2].v === 0;
   if (ticksZero && decoded.length >= 5) {
     for (var k = decoded.length; k < reg.length; k++) reg[k] = null;
   }
@@ -371,7 +372,8 @@ function barsBeatsTicks() {
    parser here too, which has the exact same "stops after one
    digit" failure once minutes reaches double digits. */
 function decodeMinsSecsDigits(decoded) {
-  var zeroPrefix = decoded.length >= 3 && decoded[0].v === 0 && decoded[1].v === 0 && decoded[2].v === 0;
+  var zeroPrefix = decoded.length >= 3 && decoded[0] && decoded[0].v === 0 &&
+                    decoded[1] && decoded[1].v === 0 && decoded[2] && decoded[2].v === 0;
   if (zeroPrefix && decoded.length >= 6) {
     for (var k = decoded.length; k < reg.length; k++) reg[k] = null;
   }
@@ -453,12 +455,21 @@ function render() {
   if (displayMode === 'bars') {
     var bbt = barsBeatsTicks();
     lastKnownBar = bbt.bar;
-    /* While actively recording, track the highest bar reached so far.
-       See the comment above recMaxBarSeen for why this -- not
+    /* While actively recording, track the highest (bar, beat) reached
+       so far. See the comment above recMaxBarSeen for why this -- not
        lastKnownBar at the moment record turns off -- is what the
-       Take Log's stop-bar field is captured from. */
-    if (recCurrentState && recMaxBarSeen !== null && bbt.bar > recMaxBarSeen) {
-      recMaxBarSeen = bbt.bar;
+       Take Log's stop-bar field is captured from. Beat is tracked
+       alongside it (kept live as long as bar hasn't dropped below the
+       max) so the stop bar can be reported as "the next bar" whenever
+       recording actually ran past beat 1 of that bar, rather than
+       always landing exactly on the last full bar reached. */
+    if (recCurrentState && recMaxBarSeen !== null) {
+      if (bbt.bar > recMaxBarSeen) {
+        recMaxBarSeen = bbt.bar;
+        recMaxBarBeat = bbt.beat;
+      } else if (bbt.bar === recMaxBarSeen) {
+        recMaxBarBeat = bbt.beat;
+      }
     }
     document.getElementById('d-bars').textContent  = pad(bbt.bar, 3);
     document.getElementById('d-beat').textContent  = String(bbt.beat);
@@ -508,15 +519,32 @@ function parseHui(data) {
      naturally handles both smooth playback (low digits change most)
      and a manual position jump (Pro Tools re-sends 0 for any digit
      that's no longer part of the shorter number, to blank it). */
+  /* Byte layout, confirmed against real captures (Sept 2026): bit 0x10 is
+     the decimal-point flag (see header comments above/below), and bit
+     0x20 is a separate BLANK flag -- "this digit position is switched
+     off" (all segments dark), independent of dp. A real reset-to-a-
+     shorter-number message (e.g. bar 15 -> bar 1 on Enter) doesn't just
+     omit the no-longer-needed higher digit -- it explicitly sends it as
+     blank (0x20, seen twice in real captures as the trailing byte after
+     a shrink) so the physical LED segment actually clears. The low
+     nibble (0x0F) is meaningless when blank is set. A blanked digit is
+     pushed as `null` here, which decodeBarsDigits/decodeMinsSecsDigits
+     and their value-accumulation loops already treat as "field ends
+     here" -- exactly the reset behavior needed. Previously any byte
+     outside 0x00-0x09/0x10-0x19 (0x20 included) was rejected outright,
+     silently dropping the ENTIRE reset message and leaving the display
+     stuck on the old value -- that was the root cause of manual bar
+     jumps sometimes not visually resetting. */
   var decoded = [];
   for (var i = 0; i < digits.length; i++) {
     var b = digits[i];
-    if (b >= 0x00 && b <= 0x09) {
-      decoded.push({v: b, dp: false});
-    } else if (i > 0 && b >= 0x10 && b <= 0x19) {
-      decoded.push({v: b - 0x10, dp: true});
+    if (b < 0x00 || b > 0x3F) return false; /* outside any known byte pattern */
+    var dp = !!(b & 0x10);
+    if (dp && i === 0) return false; /* dp never valid on y0 per protocol doc */
+    if (b & 0x20) {
+      decoded.push(null); /* blanked digit position */
     } else {
-      return false; /* invalid byte at this position (or dp on y0, which the protocol never sends) */
+      decoded.push({v: b & 0x0F, dp: dp});
     }
   }
   if (displayMode === 'bars') {
@@ -583,14 +611,25 @@ var recStartBar = null, recStopBar = null;
    (and cleared) each time it stops. */
 var recMaxBarSeen = null;
 
+/* Beat reached at recMaxBarSeen (kept live -- see render()). Used to
+   report the stop bar as "the next bar" (n+1) whenever recording ran
+   past beat 1 of the last bar reached -- e.g. stopping on beat 4 of
+   bar 70 logs stop bar 71, since musically the take reaches into the
+   following bar. Stopping exactly on beat 1 (nothing of that bar was
+   captured) logs the bar itself, with no +1. */
+var recMaxBarBeat = null;
+
 function updateRecordBars(startingNow) {
   if (startingNow) {
     recStartBar = lastKnownBar;
     recStopBar = null;
     recMaxBarSeen = lastKnownBar;
+    recMaxBarBeat = 1;
   } else {
-    recStopBar = (recMaxBarSeen !== null) ? recMaxBarSeen : lastKnownBar;
+    var stopBase = (recMaxBarSeen !== null) ? recMaxBarSeen : lastKnownBar;
+    recStopBar = (stopBase !== null && recMaxBarBeat !== null && recMaxBarBeat !== 1) ? stopBase + 1 : stopBase;
     recMaxBarSeen = null;
+    recMaxBarBeat = null;
   }
   var startEl = document.getElementById('rec-start-bar');
   var stopEl  = document.getElementById('rec-stop-bar');
