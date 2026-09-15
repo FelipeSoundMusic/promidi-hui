@@ -321,14 +321,28 @@ function fieldValue(f) {
    while parked at a static position, by BLANKING beat's position
    (byte 0x30 = blank + dp + value 0 -- see the blank-flag comment in
    parseHui). That message carries no real data and is ignored
-   outright. */
+   outright.
+
+   IMPORTANT (Sept 2026): this used to ALSO clear every register
+   position beyond the message whenever ticks arrived as 000 and the
+   message reached bar's first digit -- based on a wrong assumption
+   that a message reaching that far was always a full reset. Real
+   grid-click captures from Felipe disproved that: Pro Tools' partial-
+   update convention (see parseHui) means a higher bar digit that
+   HASN'T changed from the previous position is legitimately omitted,
+   not resent -- e.g. clicking from bar 12 to bar 14 only sends the
+   ones digit (4), because the tens digit (1) is unchanged, and the
+   register must retain it. The old clear-beyond logic was wiping
+   that still-valid retained digit every time, which is exactly why
+   double/triple/quadruple-digit bars only worked when every digit
+   happened to change (e.g. bar 100, or a jump to a multiple of ten)
+   and silently collapsed to a smaller number otherwise (bar 109 ->
+   9, bar 110 -> 10, bar 1050 -> 50). Removed entirely -- clearing a
+   digit that's genuinely going away is now handled ONLY by the
+   explicit blank byte (0x20, see parseHui), which is how Pro Tools
+   actually signals it. */
 function decodeBarsDigits(decoded) {
   if (decoded.length > 3 && decoded[3] === null) return; /* beat blanked -- idle keep-alive, ignore */
-  var ticksZero = decoded.length >= 3 && decoded[0] && decoded[0].v === 0 &&
-                   decoded[1] && decoded[1].v === 0 && decoded[2] && decoded[2].v === 0;
-  if (ticksZero && decoded.length >= 5) {
-    for (var k = decoded.length; k < reg.length; k++) reg[k] = null;
-  }
   for (var j = 0; j < decoded.length; j++) reg[j] = decoded[j];
 }
 
@@ -372,11 +386,9 @@ function barsBeatsTicks() {
    parser here too, which has the exact same "stops after one
    digit" failure once minutes reaches double digits. */
 function decodeMinsSecsDigits(decoded) {
-  var zeroPrefix = decoded.length >= 3 && decoded[0] && decoded[0].v === 0 &&
-                    decoded[1] && decoded[1].v === 0 && decoded[2] && decoded[2].v === 0;
-  if (zeroPrefix && decoded.length >= 6) {
-    for (var k = decoded.length; k < reg.length; k++) reg[k] = null;
-  }
+  /* Same fix as decodeBarsDigits -- no clear-beyond-message heuristic.
+     An omitted higher minutes digit means unchanged, not gone; only an
+     explicit blank byte (0x20, see parseHui) clears a digit. */
   for (var j = 0; j < decoded.length; j++) reg[j] = decoded[j];
 }
 
@@ -391,6 +403,50 @@ function minsSecsValue() {
     min += d.v * mmul; mmul *= 10; sawMin = true;
   }
   return { ms: ms, sec: sec, min: min };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Ruler-mode auto-detection from the digit stream itself.
+
+   Felipe reported the app wasn't switching to Bars|Beats/Mins:Secs
+   when Pro Tools' main ruler changed. The app only listened for the
+   zone 0x16 LED (a Control Change message, separate from these 0x11
+   digit SysEx messages) to know the mode changed -- and that zone
+   has no known port for Mins:Secs at all, so switching TO Mins:Secs
+   could never work through that path, and switching to Bars|Beats
+   depends on that CC actually being sent/received reliably.
+
+   Real captures of Pro Tools switching its ruler mid-session (Sept
+   2026) show the digit stream itself unambiguously reveals which
+   mode is active, via WHICH positions carry the decimal-point (dp)
+   bit -- because dp is how Pro Tools draws each mode's own separator
+   dots, and each mode's separators land in different places:
+     Bars|Beats:  dp on y3 (beat) AND y4 (bar's first digit)
+     Mins:Secs:   dp on y3 (secs-units) but NOT y4; dp on y5 instead
+                  (minutes' first digit)
+     Timecode:    dp NEVER on y3 -- instead on y2, y4, y6 (each
+                  2-digit field's first digit: seconds, minutes, hours)
+   Example: switching from Timecode to Mins:Secs mid-session sent
+   00 00 04 18 03 10 20 20 -- y3=0x18 (dp), y4=0x03 (no dp), y5=0x10
+   (dp), y6/y7 explicitly blanked (0x20) since Timecode needed all 8
+   positions and Mins:Secs only needs 6. That's the Mins:Secs
+   signature, decoded correctly with no CC message involved at all.
+
+   This only returns a mode when the message actually contains enough
+   of the distinguishing positions to tell -- a short partial update
+   (e.g. a ticks-only refresh during ordinary Bars|Beats playback)
+   returns null and the caller leaves the mode alone, rather than
+   guessing from insufficient data. */
+function detectRulerMode(decoded) {
+  var y2 = decoded[2], y3 = decoded[3], y4 = decoded[4], y5 = decoded[5];
+  if (y3 && y3.dp) {
+    if (y4) return y4.dp ? 'bars' : 'mins';
+    if (y5) return y5.dp ? 'mins' : 'bars';
+    return null; /* not enough of the message present to tell bars from mins */
+  }
+  if (y3 && !y3.dp) return 'timecode'; /* bars/mins always carry dp on y3; timecode never does */
+  if (y2 && y2.dp) return 'timecode'; /* message didn't reach y3, but y2's dp is timecode-only */
+  return null;
 }
 
 /* Last bar number seen while Pro Tools' main ruler was actually in
@@ -547,6 +603,16 @@ function parseHui(data) {
       decoded.push({v: b & 0x0F, dp: dp});
     }
   }
+  /* Auto-detect a ruler-mode change from the dp pattern itself -- see
+     detectRulerMode's header comment. Do this BEFORE decoding so a
+     message that arrives in a new mode is interpreted by the correct
+     mode's decoder, not the one the tab was previously on. */
+  var detectedMode = detectRulerMode(decoded);
+  if (detectedMode && detectedMode !== displayMode) {
+    setRuler(detectedMode);
+    log('Ruler mode auto-detected from digit stream: ' + detectedMode, 'info');
+  }
+
   if (displayMode === 'bars') {
     decodeBarsDigits(decoded);
   } else if (displayMode === 'mins') {
