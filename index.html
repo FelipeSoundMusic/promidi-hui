@@ -171,38 +171,83 @@
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════
-   HUI BARS|BEATS — CONFIRMED ENCODING (FINAL)
+   HUI COUNTER DECODE — re-derived from a real MIDI Monitor capture
+   of Pro Tools (Sept 2026), superseding an earlier "confirmed"
+   model. That earlier model was verified against data captured
+   through a Chrome Web MIDI bug that silently corrupts rapid SysEx
+   (strips F0/F7 framing, reflows the payload into fake 3-byte
+   Control-Change-looking chunks) — so that verification was
+   against garbled bytes, not real ones. This version is checked
+   against a clean capture (Brave, no corruption) and matches
+   Pro Tools' actual on-screen bar|beat|tick values exactly.
 
-   Message: F0 00 00 66 05 00 11 | 00 00 00 | [counter bytes] | F7
+   Message: F0 00 00 66 05 00 11 <digit bytes, y0 first> F7
 
-   Counter bytes — positional digit register, LSB first:
-     pos 0: beat ones    — encoded: byte - 0x10  (range 0x11-0x19)
-     pos 1: bar ones     — encoded: byte - 0x10  (range 0x10-0x19)
-     pos 2: bar tens     — RAW value             (range 0x00-0x09)
-     pos 3: bar hundreds — RAW value             (range 0x00-0x09)
-     pos 4: bar thousands— RAW value             (range 0x00-0x09)
+   Each digit byte:
+     y0 (first byte): raw 0-9. Never carries a decimal point.
+     y1..y7: raw 0-9, or +0x10 for the same digit WITH a decimal
+       point. The decimal point marks "this digit is the last
+       (most-significant) digit of its field" — i.e. the register
+       is a flat run of digits, y0 upward, split into fields at
+       every dp-flagged position (a field's own digits are ordered
+       least-significant-first, same as the register as a whole).
 
-   Only pos 0 and pos 1 use the 0x10 offset.
-   All higher positions are raw digit values 0-9.
+   Confirmed for Bars|Beats against real playback data (bar 1→2→3
+   observed cleanly, e.g. bytes 02 03 00 11 12 → y0=2,y1=3,y2=0
+   (ticks=032), y3=1+dp (beat=1), y4=2+dp (bar=2) → "bar 2 beat 1
+   tick 032", matching Pro Tools exactly):
+     y0-y2 = ticks (3 digits, no dp)
+     y3    = beat  (1 digit, dp)
+     y4..  = bar   (as many digits as needed, dp only on y4)
 
-   PARTIAL UPDATES: Pro Tools only sends the positions that changed
-   plus all lower positions. Higher positions keep their last value.
+   Timecode / Mins:Secs field layout below is inferred by analogy
+   (innermost field = fastest-changing unit) but NOT yet confirmed
+   against a real capture the way Bars|Beats was — treat those two
+   as best-effort until we do the same capture-and-verify pass.
 
-   VERIFIED:
-   bar=1   beat=1: 11 11           pos[0]=1 pos[1]=1
-   bar=2   beat=1: 11 12           pos[0]=1 pos[1]=2
-   bar=10  beat=1: 11 10 01        pos[0]=1 pos[1]=0 pos[2]=1  → 0+1*10=10 ✓
-   bar=28  beat=1: 11 18 02        pos[0]=1 pos[1]=8 pos[2]=2  → 8+2*10=28 ✓
-   bar=100 beat=1: 11 10 00 01     pos[1]=0 pos[2]=0 pos[3]=1  → 100 ✓
-   bar=198 beat=1: 11 18 09 01     → 8+9*10+1*100=198 ✓
-   bar=1000 beat=1:11 10 00 00 01  → 0+0+0+1*1000=1000 ✓
+   Messages only ever contain a contiguous run starting at y0 (per
+   the protocol doc's own format: y0, then optionally y1, then
+   optionally y2 only if y1 present, etc.), so a "partial" message
+   just means "digits above this point are unchanged since last
+   time" — which is exactly how the persistent register below
+   treats it, including across a manual position jump: Pro Tools
+   has to explicitly re-send 0 for any digit position that's no
+   longer part of the (now shorter) number, since that's the only
+   way to correctly blank a real 7-segment display.
 ═══════════════════════════════════════════════════════════ */
 
-/* Digit register: [beatOnes, barOnes, barTens, barHundreds, barThousands] */
-var reg = [1, 1, 0, 0, 0];
+/* Persistent digit register, y0..y7. Each slot is null (never set
+   yet) or {v: 0-15, dp: bool}. Only positions present in an
+   incoming message get overwritten. */
+var reg = [null,null,null,null,null,null,null,null];
+
+/* Split the register into fields at each dp-flagged position.
+   fields[0] = innermost (fastest-changing) field, fields[1] = next
+   field out, etc. Stops at the first never-set position. */
+function computeFields() {
+  var fields = [], current = [];
+  for (var pos = 0; pos < reg.length; pos++) {
+    var d = reg[pos];
+    if (d === null) break;
+    if (d.dp) {
+      if (current.length) fields.push(current);
+      current = [d.v];
+    } else {
+      current.push(d.v);
+    }
+  }
+  if (current.length) fields.push(current);
+  return fields;
+}
+/* A field's digits are stored least-significant-first (same order
+   as the register), so digit i is worth 10^i within the field. */
+function fieldValue(f) {
+  var v = 0, mul = 1;
+  for (var i = 0; i < f.length; i++) { v += f[i]*mul; mul *= 10; }
+  return v;
+}
 
 var displayMode = 'bars';
-var autoRuler = true; /* auto-switch ruler tab to match Pro Tools */
 var midiAccess = null, selIn = null, selOut = null;
 var isRec = false, sigTimer = null, demoInt = null;
 var sysexOnly = true;
@@ -253,177 +298,76 @@ function setPlay(on) {
 }
 
 function render() {
-  /* Bars|Beats:
-       reg[0]=beat-ones  reg[1]=bar-ones  reg[2]=bar-tens
-       reg[3]=bar-hundreds  reg[4]=bar-thousands
-     Mins:Secs (same register, different semantics):
-       reg[0]=sec-units  reg[1]=sec-tens  reg[2]=min-units
-       reg[3]=min-tens   reg[4]=hour-units */
-
-  /* Bars|Beats display
-     reg[0]=beat(1-9)  reg[1]=bar-ones(0-9)  reg[2]=bar-tens(0-9)
-     reg[3]=bar-hundreds(0-9)  reg[4]=bar-thousands(0-9) */
-  var bars = reg[1] + reg[2]*10 + reg[3]*100 + reg[4]*1000;
-  var beat = reg[0];
-  if (bars < 1) bars = 1;
-  if (beat < 1) beat = 1;
-  document.getElementById('d-bars').textContent  = pad(bars, 3);
-  document.getElementById('d-beat').textContent  = String(beat);
-  document.getElementById('d-ticks').textContent = '000';
-
-  /* Mins:Secs display
-     reg[0]=sec-units(0-9)  reg[1]=sec-tens(0-5)   reg[2]=min-units(0-9)
-     reg[3]=min-tens(0-9)   reg[4]=min-hundreds(0-9) */
-  var secs = reg[0] + reg[1]*10;
-  var mins = reg[2] + reg[3]*10 + reg[4]*100;
-  document.getElementById('d-mo').textContent  = pad(mins, 2);
-  document.getElementById('d-so').textContent  = pad(secs, 2);
-  document.getElementById('d-ms2').textContent = '000';
-}
-
-/* ─── Decode one counter byte at a given position ─── */
-function decodeCounterByte(b, pos) {
-  if (pos === 0) {
-    /* Bars: beat-ones  (offset 0x10-0x19)
-       Mins: sec-units  (offset 0x10-0x19) */
-    if (b >= 0x10 && b <= 0x19) return b - 0x10;
-    return -1;
+  var fields = computeFields();
+  if (displayMode === 'bars') {
+    var ticks = fields[0] ? fieldValue(fields[0]) : 0;
+    var beat  = fields[1] ? fieldValue(fields[1]) : 1;
+    var bars  = fields[2] ? fieldValue(fields[2]) : 1;
+    document.getElementById('d-bars').textContent  = pad(bars, 3);
+    document.getElementById('d-beat').textContent  = String(beat || 1);
+    document.getElementById('d-ticks').textContent = pad(ticks, 3);
+  } else if (displayMode === 'timecode') {
+    /* Best-effort field mapping -- see header comment. */
+    var ff = fields[0] ? fieldValue(fields[0]) : 0;
+    var ss = fields[1] ? fieldValue(fields[1]) : 0;
+    var mm = fields[2] ? fieldValue(fields[2]) : 0;
+    var hh = fields[3] ? fieldValue(fields[3]) : 0;
+    document.getElementById('d-hh').textContent = pad(hh, 2);
+    document.getElementById('d-mm').textContent = pad(mm, 2);
+    document.getElementById('d-ss').textContent = pad(ss, 2);
+    document.getElementById('d-ff').textContent = pad(ff, 2);
+  } else if (displayMode === 'mins') {
+    /* Best-effort field mapping -- see header comment. */
+    var ms  = fields[0] ? fieldValue(fields[0]) : 0;
+    var sec = fields[1] ? fieldValue(fields[1]) : 0;
+    var min = fields[2] ? fieldValue(fields[2]) : 0;
+    document.getElementById('d-mo').textContent  = pad(min, 2);
+    document.getElementById('d-so').textContent  = pad(sec, 2);
+    document.getElementById('d-ms2').textContent = pad(ms, 3);
   }
-  if (pos === 1) {
-    /* Bars: bar-ones   (offset 0x10-0x19)
-       Mins: sec-tens   (raw    0x00-0x09) — non-overlapping, accept both */
-    if (b >= 0x10 && b <= 0x19) return b - 0x10;
-    if (b >= 0x00 && b <= 0x09) return b;
-    return -1;
-  }
-  if (pos === 2) {
-    /* Bars: bar-tens   (raw    0x00-0x09)
-       Mins: min-units  (offset 0x10-0x19) — non-overlapping, accept both */
-    if (b >= 0x10 && b <= 0x19) return b - 0x10;
-    if (b >= 0x00 && b <= 0x09) return b;
-    return -1;
-  }
-  if (pos === 3) {
-    /* Bars: bar-hundreds (raw    0x00-0x09)
-       Mins: min-tens     (raw    0x00-0x09) */
-    if (b >= 0x00 && b <= 0x09) return b;
-    return -1;
-  }
-  if (pos === 4) {
-    /* Bars: bar-thousands (raw    0x00-0x09)
-       Mins: min-hundreds  (offset 0x10-0x19) — non-overlapping, accept both */
-    if (b >= 0x10 && b <= 0x19) return b - 0x10;
-    if (b >= 0x00 && b <= 0x09) return b;
-    return -1;
-  }
-  /* pos >= 5: raw digit, tolerate decimal-point flag (0x10 bit) for timecode */
-  if (b >= 0x00 && b <= 0x09) return b;
-  if (b >= 0x10 && b <= 0x19) return b - 0x10;
-  return -1;
 }
 
 function parseHui(data) {
-  if (data.length < 9) return false;
+  if (data.length < 8) return false;
   if (data[0]!==0xF0||data[1]!==0x00||data[2]!==0x00||data[3]!==0x66) return false;
   if (data[4]!==0x05||data[5]!==0x00||data[6]!==0x11) return false;
   if (data[data.length-1]!==0xF7) return false;
 
-  var payload = data.slice(7, data.length - 1);
-  /* First 3 bytes = ticks (TBD, always 00 00 00 in bars mode) */
-  var counterBytes = payload.slice(3);
-  if (counterBytes.length === 0) return false;
+  var digits = data.slice(7, data.length - 1);
+  if (digits.length === 0) return false;
 
-  var cHex = counterBytes.map(function(b){
+  var cHex = digits.map(function(b){
     return b.toString(16).toUpperCase().padStart(2,'0');
   }).join(' ');
 
-  /* Ignore keep-alive (first byte is 0x30) */
-  if (counterBytes[0] === 0x30) return true;
-
-  /* ── RULER AUTO-DETECTION ──
-     Each ruler lights different decimal points (the 0x10 bit on a digit
-     byte = that digit's decimal point is lit). The point positions are
-     the field separators on the LED, giving each ruler a fingerprint:
-       Bars|Beats : points at digit y0 and y1            (e.g. 11 15 02 01)
-       Mins:Secs  : points at digit y0 and y2            (e.g. 10 00 13)
-       Timecode   : points at digit y2, y4, y6           (e.g. ..13 02 11 00 10 00)
-     We only re-detect from messages long enough to carry the fingerprint
-     (3+ counter bytes), so short beat-only updates don't disturb it. */
-  if (autoRuler && !zoneModeSeen && counterBytes.length >= 3) {
-    var dp = []; /* positions with decimal point lit */
-    for (var p = 0; p < counterBytes.length; p++) {
-      if ((counterBytes[p] & 0x10) && (counterBytes[p] & 0x0F) <= 0x09) dp.push(p);
-    }
-    var detected = null;
-    if (dp.indexOf(4) >= 0 || dp.indexOf(6) >= 0) {
-      detected = 'timecode';            /* points high up = HH:MM:SS:FF colons */
-    } else if (dp.indexOf(2) >= 0) {
-      detected = 'mins';                /* point at y2 = M:SS separator */
-    } else if (dp.indexOf(1) >= 0) {
-      detected = 'bars';                /* point at y1 = bar|beat separator */
-    }
-    if (detected) setRuler(detected);
-  }
-
-  /* Validate and decode each counter byte */
+  /* Decode each digit byte (see header comment for the scheme) and
+     write into the persistent register -- only positions present in
+     this message are touched, everything else keeps its prior value.
+     Messages are always a contiguous run starting at y0, so this
+     naturally handles both smooth playback (low digits change most)
+     and a manual position jump (Pro Tools re-sends 0 for any digit
+     that's no longer part of the shorter number, to blank it). */
   var decoded = [];
-  for (var i = 0; i < counterBytes.length; i++) {
-    var d = decodeCounterByte(counterBytes[i], i);
-    if (d < 0) return false; /* invalid byte at this position — reject */
-    decoded.push(d);
+  for (var i = 0; i < digits.length; i++) {
+    var b = digits[i];
+    if (b >= 0x00 && b <= 0x09) {
+      decoded.push({v: b, dp: false});
+    } else if (i > 0 && b >= 0x10 && b <= 0x19) {
+      decoded.push({v: b - 0x10, dp: true});
+    } else {
+      return false; /* invalid byte at this position (or dp on y0, which the protocol never sends) */
+    }
   }
-
-  /* Manual position jump detection:
-     When the user types a bar number, Pro Tools sends a message where
-     the 3 ticks prefix bytes are ALL 0x00 (ticks reset to zero).
-     During playback, ticks are counting so the prefix bytes are non-zero.
-     If ticks are all zero AND we have 2+ counter bytes: manual jump.
-     Zero register positions above what was sent to clear stale high digits.
-     Single-byte beat-only messages never trigger a reset. */
-  /* Manual position jump detection.
-     We use TWO signals that must BOTH be true:
-       1. Ticks are all zero (Pro Tools resets ticks on manual entry)
-       2. More than 400ms has elapsed since the last valid message
-          (manual input always takes at least 500ms; even slow-tempo
-          playback sends messages every 30-50ms so gap stays small)
-     Using both signals prevents false triggers at bar boundaries where
-     ticks genuinely hit zero during slow-tempo playback.
-
-     Additionally, for 2-byte messages we check pos1 encoding:
-       pos1 >= 0x10 = Bars bar-ones (reset ok)
-       pos1 <  0x10 = Mins:Secs sec-tens (never reset minutes) */
-  var ticksAllZero = (payload[0]===0x00 && payload[1]===0x00 && payload[2]===0x00);
-  var now = Date.now();
-  var gap = now - (parseHui._t || 0);
-  parseHui._t = now;
-  var longGap = gap > 400;
-  var pos1IsOffset = (counterBytes.length >= 2 && counterBytes[1] >= 0x10);
-  if (decoded.length >= 2 && ticksAllZero && longGap && (decoded.length >= 3 || pos1IsOffset)) {
-    for (var k = decoded.length; k < reg.length; k++) reg[k] = 0;
-  }
-
-  /* Write decoded digits into register (partial update: only positions present) */
-  for (var j = 0; j < decoded.length && j < reg.length; j++) {
-    reg[j] = decoded[j];
-  }
+  for (var j = 0; j < decoded.length; j++) reg[j] = decoded[j];
 
   render();
 
-  /* Debug */
-  var bars = reg[1] + reg[2]*10 + reg[3]*100 + reg[4]*1000;
   document.getElementById('db-raw').textContent = cHex;
-  document.getElementById('db-reg').textContent =
-    'beat='+reg[0]+' b1='+reg[1]+' b10='+reg[2]+' b100='+reg[3]+' b1k='+reg[4];
-  var secs3 = reg[0] + reg[1]*10;
-  var mins3 = reg[2] + reg[3]*10;
-  document.getElementById('db-res').textContent = 'bar='+bars+' beat='+reg[0]+' | '+pad(mins3,2)+':'+pad(secs3,2);
-
-  var secs2 = reg[0] + reg[1]*10;
-  var mins2 = reg[2] + reg[3]*10;
-  document.getElementById('dec-out').textContent =
-    'bars  → ' + bars + '  beat → ' + reg[0] + '\n' +
-    'mins  → ' + pad(mins2,2) + ':' + pad(secs2,2) + '\n' +
-    'raw   → ' + cHex;
+  document.getElementById('db-reg').textContent = reg.map(function(d, i){
+    return d ? ('y'+i+'='+d.v+(d.dp?'.':'')) : null;
+  }).filter(function(x){ return x; }).join(' ');
+  document.getElementById('db-res').textContent = displayMode;
+  document.getElementById('dec-out').textContent = 'mode → ' + displayMode + '\nraw  → ' + cHex;
 
   return true;
 }
@@ -446,11 +390,12 @@ var recCurrentState = false;
    currently active on its main ruler:
      port 0 = timecode   port 1 = feet+frames   port 2 = bars|beats
    (port 3 = "rudesolo", unrelated, ignored here.)
-   This is a direct, authoritative mode signal from Pro Tools -- once we've
-   seen one, it takes priority over the decimal-point heuristic below. */
+   This is a direct, authoritative mode signal from Pro Tools. There is no
+   known zone 0x16 LED for Mins:Secs, so that mode has no auto-detection --
+   switch to it manually with the tab above until we capture real data for
+   it the way we did for Bars|Beats (see header comment on the register). */
 var HUI_MODE_ZONE = 0x16;
 var HUI_MODE_LED = {0:'timecode', 1:'feet', 2:'bars'};
-var zoneModeSeen = false;
 
 function applyRecordState(on) {
   if (on !== recCurrentState) {
@@ -500,11 +445,9 @@ function onMidi(event) {
            HUI_MODE_LED. Supersedes the decimal-point heuristic. */
         var mode = HUI_MODE_LED[port];
         if (mode === 'bars' || mode === 'timecode') {
-          zoneModeSeen = true;
           setRuler(mode);
           log('Counter mode (zone 0x16): ' + mode, 'info');
         } else if (mode === 'feet') {
-          zoneModeSeen = true;
           log('Counter mode (zone 0x16): feet+frames -- no display panel for this yet', 'warn');
         }
       }
@@ -598,6 +541,23 @@ document.querySelectorAll('.rtab').forEach(function(t){
   });
 });
 
+/* Writes bars|beats|ticks into the real register shape (see header
+   comment): y0-y2 = ticks digits (no dp), y3 = beat (dp), y4.. =
+   bar digits, dp on the topmost one only. Clears anything above
+   what's written, same as a real Pro Tools position jump would. */
+function setBarsBeatsTicks(bars, beat, ticks) {
+  var next = [null,null,null,null,null,null,null,null];
+  next[0] = {v: ticks % 10, dp: false};
+  next[1] = {v: Math.floor(ticks/10) % 10, dp: false};
+  next[2] = {v: Math.floor(ticks/100) % 10, dp: false};
+  next[3] = {v: beat % 10, dp: true};
+  var barDigits = String(Math.max(1, bars)).split('').reverse().map(Number);
+  for (var i = 0; i < barDigits.length; i++) {
+    next[4+i] = {v: barDigits[i], dp: (i === barDigits.length - 1)};
+  }
+  reg = next;
+}
+
 var dT=0, dB=1, dBars=1;
 document.getElementById('demo').addEventListener('click', function(){
   if(demoInt){
@@ -609,11 +569,7 @@ document.getElementById('demo').addEventListener('click', function(){
   demoInt=setInterval(function(){
     dT+=63; if(dT>=960){ dT-=960; dB++; }
     if(dB>4){ dB=1; dBars++; }
-    reg[0]=dB;
-    reg[1]=dBars%10;
-    reg[2]=Math.floor(dBars/10)%10;
-    reg[3]=Math.floor(dBars/100)%10;
-    reg[4]=Math.floor(dBars/1000)%10;
+    setBarsBeatsTicks(dBars, dB, dT);
     render(); pulse();
   }, 33);
 });
