@@ -13,17 +13,17 @@
     #app{position:relative;width:100%;max-width:860px;color:var(--hui-text)}
     #app::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:6;border-radius:10px;opacity:0.5;mix-blend-mode:overlay;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0px,rgba(0,0,0,0.14) 1px,transparent 1px,transparent 3px)}
 
-    .rack{position:relative;background:linear-gradient(180deg,#171b17,#0d0f0d 40%);border:1px solid #232c23;border-radius:10px;padding:24px 26px 18px;box-shadow:0 26px 60px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.03)}
+    .rack{position:relative;background:linear-gradient(180deg,#171b17,#0d0f0d 40%);border:1px solid #232c23;border-radius:10px;padding:24px 26px 18px;box-shadow:0 26px 60px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.03);--w2:min(11vw,77px);--w3:min(17vw,115px);--w5:min(28.5vw,192px);--wsep:min(3.5vw,24px)}
     .screw{width:8px;height:8px;border-radius:50%;position:absolute;background:radial-gradient(circle at 35% 30%,#3a3f3a,#101210 70%)}
     .screw::after{content:"";position:absolute;top:50%;left:14%;width:72%;height:1px;background:#0a0c0a;transform:translateY(-50%) rotate(35deg)}
     .screw.tl{top:11px;left:11px}.screw.tr{top:11px;right:11px}.screw.bl{bottom:11px;left:11px}.screw.br{bottom:11px;right:11px}
 
     /* ── brand plate + mode tabs ─────────────────────────────── */
     .platebar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px;flex-wrap:wrap}
-    .plate{display:flex;align-items:center;gap:12px;background:#0a0c0a;border:1px solid #232c23;border-radius:6px;padding:8px 18px 8px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03)}
-    .plate-logo{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(57,255,106,0.35))}
-    .plate-title{font-size:14px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:var(--accent);transition:color 0.3s;line-height:1.3}
-    .plate-sub{font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:#4a5a4a}
+    .plate{display:flex;align-items:center;gap:16px;background:#0a0c0a;border:1px solid #232c23;border-radius:8px;padding:10px 22px 10px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03)}
+    .plate-logo{width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(57,255,106,0.5)) drop-shadow(0 0 26px rgba(57,255,106,0.25))}
+    .plate-title{font-size:19px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--accent);transition:color 0.3s;line-height:1.3}
+    .plate-sub{font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:#4a5a4a;margin-top:2px}
     .rtabs{display:flex;gap:6px}
     .rtab{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border:1px solid var(--hui-border);border-radius:4px;cursor:pointer;color:var(--hui-dim);background:transparent;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all 0.15s}
     .rtab:hover{border-color:var(--hui-text);color:var(--hui-text)}
@@ -31,15 +31,28 @@
 
     /* ── main row: LED window + control rack ─────────────────── */
     .mainrow{display:flex;gap:18px;align-items:stretch}
-    .ledwin{position:relative;flex:1;min-width:0;background:#040504;border:1px solid #1a1f1a;border-radius:6px;box-shadow:inset 0 3px 12px rgba(0,0,0,0.75),inset 0 0 40px rgba(0,0,0,0.45);overflow:hidden;display:flex;align-items:center;justify-content:center;padding:30px 12px}
-    .matrix-bg{position:absolute;inset:0;width:100%;height:100%;opacity:0.55}
-    .cw{position:relative;z-index:1;display:flex;align-items:baseline;font-family:'Chakra Petch',monospace;line-height:1;flex-wrap:wrap;justify-content:center}
+    .ledwin{position:relative;flex:1;min-width:0;background:#040504;border:1px solid #1a1f1a;border-radius:6px;box-shadow:inset 0 3px 12px rgba(0,0,0,0.75),inset 0 0 40px rgba(0,0,0,0.45);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px 12px}
     .field-group{display:contents}
-    .cf{display:flex;flex-direction:column;align-items:center}
-    .cfl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3a4a3a;margin-bottom:6px;font-family:'Rajdhani',sans-serif}
-    .cv{font-size:min(9.5vw,64px);font-weight:700;color:var(--accent);letter-spacing:1px;transition:color 0.3s;min-width:1ch;text-align:center;text-shadow:0 0 22px rgba(57,255,106,0.4)}
-    .cv.inv{color:#050605;background:var(--accent);padding:0 10px;border-radius:5px;text-shadow:none}
-    .csep{font-size:min(6.5vw,44px);color:#1e2a1e;padding:0 4px 4px;font-family:'Chakra Petch',monospace}
+    /* Two stacked rows (labels, then digits) sharing identical column
+       widths per field -- see --w2/--w3/--w5/--wsep on .rack above --
+       so the "|"/":" separators only ever sit in the digit row (never
+       stretching up next to the words) and so a field growing from
+       "9" to "10" to "100" never shifts any other field's position:
+       each field's box is a fixed reserved width, not sized to its
+       current content. */
+    .clabels{display:flex;align-items:flex-end;justify-content:center;flex-wrap:wrap;font-family:'Rajdhani',sans-serif}
+    .cw{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;font-family:'Chakra Petch',monospace;line-height:1}
+    .cfl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3a4a3a;text-align:center;width:var(--w2);flex-shrink:0}
+    .cfl.wbars{width:var(--w5)}
+    .cfl.w3{width:calc(var(--w3) + 20px)}
+    .cfl.w2p{width:calc(var(--w2) + 20px)}
+    .cgap{width:var(--wsep);flex-shrink:0}
+    .cv{font-size:min(9.5vw,64px);font-weight:700;color:var(--accent);letter-spacing:1px;transition:color 0.3s;width:var(--w2);flex-shrink:0;text-align:center;text-shadow:0 0 22px rgba(57,255,106,0.4)}
+    .cv.wbars{width:var(--w5)}
+    .cv.w3{width:var(--w3)}
+    .cv.inv{color:#050605;background:var(--accent);padding:0 10px;border-radius:5px;text-shadow:none;width:calc(var(--w2) + 20px)}
+    .cv.inv.w3{width:calc(var(--w3) + 20px)}
+    .csep{font-size:min(6.5vw,44px);color:#1e2a1e;padding-bottom:4px;font-family:'Chakra Petch',monospace;width:var(--wsep);flex-shrink:0;text-align:center}
 
     /* ── side control rack ───────────────────────────────────── */
     .rack-panel{width:172px;flex-shrink:0;background:#0a0c0a;border:1px solid #1a1f1a;border-radius:6px;padding:14px 14px 16px;display:flex;flex-direction:column;gap:14px}
@@ -155,34 +168,49 @@
 
     <div class="mainrow">
       <div class="ledwin">
-        <canvas class="matrix-bg" id="matrix-bg"></canvas>
         <div id="disp-bars">
+          <div class="clabels">
+            <div class="cfl wbars">Bars</div>
+            <div class="cgap"></div>
+            <div class="cfl">Beat</div>
+            <div class="field-group opt-ticks"><div class="cgap"></div><div class="cfl w3">Ticks</div></div>
+          </div>
           <div class="cw">
-            <div class="cf"><div class="cfl">Bars</div><div class="cv" id="d-bars">001</div></div>
+            <div class="cv wbars" id="d-bars">1</div>
             <div class="csep">|</div>
-            <div class="cf"><div class="cfl">Beat</div><div class="cv" id="d-beat">1</div></div>
-            <div id="field-ticks" class="field-group">
-              <div class="csep">|</div>
-              <div class="cf"><div class="cfl">Ticks</div><div class="cv inv" id="d-ticks">000</div></div>
-            </div>
+            <div class="cv" id="d-beat">1</div>
+            <div class="field-group opt-ticks"><div class="csep">|</div><div class="cv w3 inv" id="d-ticks">000</div></div>
           </div>
         </div>
-        <div id="disp-tc" class="cw" style="display:none">
-          <div class="cf"><div class="cfl">HH</div><div class="cv" id="d-hh">00</div></div>
-          <div class="csep">:</div>
-          <div class="cf"><div class="cfl">MM</div><div class="cv" id="d-mm">00</div></div>
-          <div class="csep">:</div>
-          <div class="cf"><div class="cfl">SS</div><div class="cv" id="d-ss">00</div></div>
-          <div class="csep">:</div>
-          <div class="cf"><div class="cfl">FF</div><div class="cv inv" id="d-ff">00</div></div>
+        <div id="disp-tc" style="display:none">
+          <div class="clabels">
+            <div class="cfl">HH</div><div class="cgap"></div>
+            <div class="cfl">MM</div><div class="cgap"></div>
+            <div class="cfl">SS</div><div class="cgap"></div>
+            <div class="cfl w2p">FF</div>
+          </div>
+          <div class="cw">
+            <div class="cv" id="d-hh">00</div>
+            <div class="csep">:</div>
+            <div class="cv" id="d-mm">00</div>
+            <div class="csep">:</div>
+            <div class="cv" id="d-ss">00</div>
+            <div class="csep">:</div>
+            <div class="cv inv" id="d-ff">00</div>
+          </div>
         </div>
-        <div id="disp-ms" class="cw" style="display:none">
-          <div class="cf"><div class="cfl">Mins</div><div class="cv" id="d-mo">00</div></div>
-          <div class="csep">:</div>
-          <div class="cf"><div class="cfl">Secs</div><div class="cv" id="d-so">00</div></div>
-          <div id="field-ms" class="field-group">
-            <div class="csep">.</div>
-            <div class="cf"><div class="cfl">ms</div><div class="cv inv" id="d-ms2">000</div></div>
+        <div id="disp-ms" style="display:none">
+          <div class="clabels">
+            <div class="cfl">Mins</div>
+            <div class="cgap"></div>
+            <div class="cfl">Secs</div>
+            <div class="field-group opt-ms"><div class="cgap"></div><div class="cfl w3">ms</div></div>
+          </div>
+          <div class="cw">
+            <div class="cv" id="d-mo">00</div>
+            <div class="csep">:</div>
+            <div class="cv" id="d-so">00</div>
+            <div class="field-group opt-ms"><div class="csep">.</div><div class="cv w3 inv" id="d-ms2">000</div></div>
           </div>
         </div>
       </div>
@@ -593,7 +621,7 @@ function render() {
         recMaxBarBeat = bbt.beat;
       }
     }
-    document.getElementById('d-bars').textContent  = pad(bbt.bar, 3);
+    document.getElementById('d-bars').textContent  = String(bbt.bar);
     document.getElementById('d-beat').textContent  = String(bbt.beat);
     document.getElementById('d-ticks').textContent = pad(bbt.ticks, 3);
     return;
@@ -982,8 +1010,8 @@ function wireToggle(rowId, defaultOn, onChange) {
 }
 
 wireToggle('tg-ticks', true, function(on){
-  document.getElementById('field-ticks').style.display = on ? '' : 'none';
-  document.getElementById('field-ms').style.display = on ? '' : 'none';
+  document.querySelectorAll('.opt-ticks').forEach(function(el){ el.style.display = on ? '' : 'none'; });
+  document.querySelectorAll('.opt-ms').forEach(function(el){ el.style.display = on ? '' : 'none'; });
 });
 wireToggle('tg-signal', false, function(on){
   document.getElementById('signal-panel').style.display = on ? '' : 'none';
@@ -991,43 +1019,6 @@ wireToggle('tg-signal', false, function(on){
 wireToggle('tg-debug', false, function(on){
   document.getElementById('debug-row').style.display = on ? '' : 'none';
 });
-
-/* ── Matrix-style rain, drawn faintly behind the LED counter ──
-   Purely decorative: cheap canvas fill using the app's own hex
-   protocol alphabet, redrawn on a slow interval (not every rAF
-   frame) so it never competes with real MIDI handling for CPU. */
-function initMatrixRain() {
-  var canvas = document.getElementById('matrix-bg');
-  if (!canvas || !canvas.getContext) return;
-  var ctx = canvas.getContext('2d');
-  var chars = '0123456789ABCDEF'.split('');
-  var fontSize = 13, cols = 0, drops = [];
-  function resize() {
-    var host = canvas.parentElement;
-    var w = host.clientWidth, h = host.clientHeight;
-    if (!w || !h) return;
-    canvas.width = w; canvas.height = h;
-    cols = Math.max(1, Math.floor(w / fontSize));
-    drops = new Array(cols);
-    for (var i = 0; i < cols; i++) drops[i] = Math.floor(Math.random() * h / fontSize);
-  }
-  resize();
-  window.addEventListener('resize', resize);
-  setInterval(function(){
-    if (!canvas.width || !canvas.height) return;
-    ctx.fillStyle = 'rgba(4,5,4,0.16)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = fontSize + 'px "Share Tech Mono", monospace';
-    for (var i = 0; i < cols; i++) {
-      ctx.fillStyle = Math.random() > 0.94 ? 'rgba(160,255,190,0.5)' : 'rgba(57,255,106,0.28)';
-      var ch = chars[(Math.random() * chars.length) | 0];
-      ctx.fillText(ch, i * fontSize, drops[i] * fontSize);
-      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-      drops[i]++;
-    }
-  }, 75);
-}
-initMatrixRain();
 
 buildSig(); render(); setPlay(true);
 })();
