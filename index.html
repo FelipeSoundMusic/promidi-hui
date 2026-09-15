@@ -453,6 +453,13 @@ function render() {
   if (displayMode === 'bars') {
     var bbt = barsBeatsTicks();
     lastKnownBar = bbt.bar;
+    /* While actively recording, track the highest bar reached so far.
+       See the comment above recMaxBarSeen for why this -- not
+       lastKnownBar at the moment record turns off -- is what the
+       Take Log's stop-bar field is captured from. */
+    if (recCurrentState && recMaxBarSeen !== null && bbt.bar > recMaxBarSeen) {
+      recMaxBarSeen = bbt.bar;
+    }
     document.getElementById('d-bars').textContent  = pad(bbt.bar, 3);
     document.getElementById('d-beat').textContent  = String(bbt.beat);
     document.getElementById('d-ticks').textContent = pad(bbt.ticks, 3);
@@ -563,12 +570,27 @@ var HUI_MODE_LED = {0:'timecode', 1:'feet', 2:'bars'};
    ruler is on Timecode or Mins:Secs this will show the last bar
    number seen before that switch, not a true "current bar". */
 var recStartBar = null, recStopBar = null;
+
+/* Highest bar number seen since recording started. Pro Tools typically
+   returns the playhead to the punch-in/start point as part of stopping
+   (or immediately after), and that reset message can land before the
+   debounced record-off LED state is actually applied -- so by the time
+   applyRecordState(false) runs, lastKnownBar may already be the START
+   bar again, not the true last bar reached. Forward recording only
+   ever increases the bar count while rolling, so the max seen during
+   the record-on window is the correct stop bar regardless of what
+   arrives afterward. Set fresh each time recording starts; consumed
+   (and cleared) each time it stops. */
+var recMaxBarSeen = null;
+
 function updateRecordBars(startingNow) {
   if (startingNow) {
     recStartBar = lastKnownBar;
     recStopBar = null;
+    recMaxBarSeen = lastKnownBar;
   } else {
-    recStopBar = lastKnownBar;
+    recStopBar = (recMaxBarSeen !== null) ? recMaxBarSeen : lastKnownBar;
+    recMaxBarSeen = null;
   }
   var startEl = document.getElementById('rec-start-bar');
   var stopEl  = document.getElementById('rec-stop-bar');
