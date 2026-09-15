@@ -349,7 +349,7 @@ function parseHui(data) {
        Timecode   : points at digit y2, y4, y6           (e.g. ..13 02 11 00 10 00)
      We only re-detect from messages long enough to carry the fingerprint
      (3+ counter bytes), so short beat-only updates don't disturb it. */
-  if (autoRuler && !zoneModeSeen && counterBytes.length >= 3) {
+  if (autoRuler && counterBytes.length >= 3) {
     var dp = []; /* positions with decimal point lit */
     for (var p = 0; p < counterBytes.length; p++) {
       if ((counterBytes[p] & 0x10) && (counterBytes[p] & 0x0F) <= 0x09) dp.push(p);
@@ -441,17 +441,6 @@ var recDebounceTimer = null;
 var recPendingState = null;
 var recCurrentState = false;
 
-/* Zone 0x16 = "timecode leds" (no associated buttons). Per the HUI protocol
-   doc, the host lights one of these to report which counter mode is
-   currently active on its main ruler:
-     port 0 = timecode   port 1 = feet+frames   port 2 = bars|beats
-   (port 3 = "rudesolo", unrelated, ignored here.)
-   This is a direct, authoritative mode signal from Pro Tools -- once we've
-   seen one, it takes priority over the decimal-point heuristic below. */
-var HUI_MODE_ZONE = 0x16;
-var HUI_MODE_LED = {0:'timecode', 1:'feet', 2:'bars'};
-var zoneModeSeen = false;
-
 function applyRecordState(on) {
   if (on !== recCurrentState) {
     recCurrentState = on;
@@ -493,20 +482,6 @@ function onMidi(event) {
         recDebounceTimer = setTimeout(function() {
           applyRecordState(recPendingState);
         }, 80);
-      }
-      if (huiZone === HUI_MODE_ZONE && on) {
-        /* Counter-mode LED. Authoritative signal for which ruler Pro
-           Tools' main counter is currently showing -- see comment above
-           HUI_MODE_LED. Supersedes the decimal-point heuristic. */
-        var mode = HUI_MODE_LED[port];
-        if (mode === 'bars' || mode === 'timecode') {
-          zoneModeSeen = true;
-          setRuler(mode);
-          log('Counter mode (zone 0x16): ' + mode, 'info');
-        } else if (mode === 'feet') {
-          zoneModeSeen = true;
-          log('Counter mode (zone 0x16): feet+frames -- no display panel for this yet', 'warn');
-        }
       }
       huiZone = -1;
     }
