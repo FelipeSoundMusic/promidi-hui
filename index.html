@@ -136,6 +136,13 @@
         <div class="plbl">Last Decoded</div>
         <div id="dec-out" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--hui-dim);line-height:1.9;letter-spacing:1px">— waiting —</div>
       </div>
+      <div style="margin-top:14px">
+        <div class="plbl">Recording (Bars) — persists until next take</div>
+        <div style="display:flex;gap:20px">
+          <div class="df" style="margin:0"><div class="dfl">Start Bar</div><div class="dfv hi" id="rec-start-bar">—</div></div>
+          <div class="df" style="margin:0"><div class="dfl">Stop Bar</div><div class="dfv hi" id="rec-stop-bar">—</div></div>
+        </div>
+      </div>
     </div>
     <div class="panel">
       <div class="plbl">MIDI Device</div>
@@ -247,6 +254,66 @@ function fieldValue(f) {
   return v;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Bars|Beats has a CONFIRMED, fixed structure (see header comment):
+     y0-y2 = ticks  (fixed 3 digits, never carry dp)
+     y3    = beat   (fixed 1 digit, always carries dp)
+     y4..  = bar    (variable width, dp only on the topmost digit)
+
+   computeFields()/fieldValue() above are too generic for this: they
+   split purely on dp boundaries, which works for the *bar* field
+   (it's genuinely variable-width and dp-terminated) but not for the
+   ticks/beat boundary, because ticks never carries a dp of its own
+   -- there's nothing to split on until beat's dp arrives, so a
+   naive dp-split either merges ticks+beat into one field, or (if
+   dp starts a new field instead of closing one) bleeds bar's own
+   non-top digits into what should be an isolated 1-digit beat
+   field. Both bugs are invisible for single-digit bars (1-9) and
+   only show up at bar 10+, which is exactly the failure Felipe
+   reported. Fixed-position decode below sidesteps this entirely.
+
+   Bar shrinking (e.g. bar 10 -> bar 1 on a manual jump) needs one
+   more piece: Pro Tools' message for the new, shorter value only
+   goes as far as bar's new topmost digit (dp=true there) -- it
+   doesn't resend a "blank" for the old, now-unused higher digit(s).
+   So: whenever an incoming message actually reaches into the bar
+   field (more than 4 digits) and its very last digit is bar's own
+   top (dp=true), that's a definitive "the bar field ends here now"
+   -- anything further out in the register is stale from a wider
+   number and gets cleared. A message that stops at y3 (beat, which
+   is *always* dp=true structurally) must NOT trigger this, since
+   that just means "beat changed, bar didn't" -- the >4 length check
+   is what tells the two cases apart. */
+function decodeBarsDigits(decoded) {
+  for (var j = 0; j < decoded.length; j++) reg[j] = decoded[j];
+  if (decoded.length > 4 && decoded[decoded.length - 1].dp) {
+    for (var k = decoded.length; k < reg.length; k++) reg[k] = null;
+  }
+}
+
+function barsBeatsTicks() {
+  var ticks = 0, mul = 1, i;
+  for (i = 0; i <= 2; i++) { if (reg[i]) ticks += reg[i].v * mul; mul *= 10; }
+  var beat = reg[3] ? reg[3].v : 1;
+  var bar = 0, bmul = 1, sawBar = false;
+  for (i = 4; i < reg.length; i++) {
+    var d = reg[i];
+    if (d === null) break;
+    bar += d.v * bmul; bmul *= 10; sawBar = true;
+    if (d.dp) break; /* topmost bar digit -- field ends here */
+  }
+  if (!sawBar) bar = 1;
+  return { ticks: ticks, beat: beat || 1, bar: bar || 1 };
+}
+
+/* Last bar number seen while Pro Tools' main ruler was actually in
+   Bars|Beats -- kept around so the record start/stop bar log (see
+   applyRecordState) still has a sensible value even if you're
+   currently looking at a different tab. Only meaningful if Pro
+   Tools was in Bars|Beats at the moment that matters -- see the
+   caveat on the record log fields. */
+var lastKnownBar = null;
+
 var displayMode = 'bars';
 var midiAccess = null, selIn = null, selOut = null;
 var isRec = false, sigTimer = null, demoInt = null;
@@ -298,15 +365,16 @@ function setPlay(on) {
 }
 
 function render() {
-  var fields = computeFields();
   if (displayMode === 'bars') {
-    var ticks = fields[0] ? fieldValue(fields[0]) : 0;
-    var beat  = fields[1] ? fieldValue(fields[1]) : 1;
-    var bars  = fields[2] ? fieldValue(fields[2]) : 1;
-    document.getElementById('d-bars').textContent  = pad(bars, 3);
-    document.getElementById('d-beat').textContent  = String(beat || 1);
-    document.getElementById('d-ticks').textContent = pad(ticks, 3);
-  } else if (displayMode === 'timecode') {
+    var bbt = barsBeatsTicks();
+    lastKnownBar = bbt.bar;
+    document.getElementById('d-bars').textContent  = pad(bbt.bar, 3);
+    document.getElementById('d-beat').textContent  = String(bbt.beat);
+    document.getElementById('d-ticks').textContent = pad(bbt.ticks, 3);
+    return;
+  }
+  var fields = computeFields();
+  if (displayMode === 'timecode') {
     /* Best-effort field mapping -- see header comment. */
     var ff = fields[0] ? fieldValue(fields[0]) : 0;
     var ss = fields[1] ? fieldValue(fields[1]) : 0;
@@ -358,7 +426,11 @@ function parseHui(data) {
       return false; /* invalid byte at this position (or dp on y0, which the protocol never sends) */
     }
   }
-  for (var j = 0; j < decoded.length; j++) reg[j] = decoded[j];
+  if (displayMode === 'bars') {
+    decodeBarsDigits(decoded);
+  } else {
+    for (var j = 0; j < decoded.length; j++) reg[j] = decoded[j];
+  }
 
   render();
 
@@ -397,10 +469,28 @@ var recCurrentState = false;
 var HUI_MODE_ZONE = 0x16;
 var HUI_MODE_LED = {0:'timecode', 1:'feet', 2:'bars'};
 
+/* Record start/stop bar log. Only meaningful while Pro Tools' main
+   ruler is (or was last) actually in Bars|Beats -- lastKnownBar only
+   updates from real bars-format SysEx, so if you record while the
+   ruler is on Timecode or Mins:Secs this will show the last bar
+   number seen before that switch, not a true "current bar". */
+var recStartBar = null, recStopBar = null;
+function updateRecordBars(startingNow) {
+  if (startingNow) {
+    recStartBar = lastKnownBar;
+    recStopBar = null;
+  } else {
+    recStopBar = lastKnownBar;
+  }
+  document.getElementById('rec-start-bar').textContent = recStartBar !== null ? pad(recStartBar, 3) : '—';
+  document.getElementById('rec-stop-bar').textContent  = recStopBar  !== null ? pad(recStopBar, 3)  : '—';
+}
+
 function applyRecordState(on) {
   if (on !== recCurrentState) {
     recCurrentState = on;
     setAccent(on);
+    updateRecordBars(on);
     log('Record ' + (on ? 'ON' : 'OFF'), 'info');
   }
 }
