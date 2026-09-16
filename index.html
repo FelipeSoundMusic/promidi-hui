@@ -116,6 +116,11 @@
     .sd{width:7px;height:7px;border-radius:50%;background:var(--hui-dim);transition:background 0.3s,box-shadow 0.3s}
     .sd.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
 
+    /* ── viewer mode : read-only status line, no local MIDI panels ── */
+    .viewer-status{margin-top:18px;padding-top:16px;border-top:1px solid #1a1f1a;display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--hui-dim)}
+    .viewer-status .sd{margin-right:2px}
+    .viewer-status.live{color:var(--hui-text)}
+
     /* ── signal monitor : hidden by default ──────────────────── */
     .signal-panel{margin-top:16px;padding-top:16px;border-top:1px solid #1a1f1a}
     .plbl{font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:#3a4a3a;margin-bottom:10px}
@@ -252,10 +257,10 @@
       </div>
 
       <div class="rack-panel">
-        <div class="rack-panel-lbl">Panel Controls</div>
-        <div class="rtoggle" id="tg-ticks"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Ticks / ms</span></div>
-        <div class="rtoggle" id="tg-signal"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Signal Mon.</span></div>
-        <div class="rtoggle" id="tg-debug"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Debug Info</span></div>
+        <div class="rack-panel-lbl" id="panel-controls-lbl">Panel Controls</div>
+        <div class="rtoggle local-only" id="tg-ticks"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Ticks / ms</span></div>
+        <div class="rtoggle local-only" id="tg-signal"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Signal Mon.</span></div>
+        <div class="rtoggle local-only" id="tg-debug"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Debug Info</span></div>
         <div class="rack-panel-lbl" style="margin-top:2px">Session</div>
         <div class="sgrid-mini">
           <div class="si lit" id="i-play"><div class="sled on" id="l-play"></div>Play</div>
@@ -284,7 +289,7 @@
       </div>
     </div>
 
-    <div class="setup-row">
+    <div class="setup-row" id="midi-setup-row">
       <div class="setup-lbl">MIDI Setup</div>
       <select class="dsel" id="dev-in"><option value="">— Select Input —</option></select>
       <select class="dsel" id="dev-out"><option value="">— Select Output —</option></select>
@@ -292,6 +297,20 @@
       <div class="sp"><div class="sd" id="sd"></div><span id="sl">No MIDI Access</span></div>
       <div id="midi-msg"></div>
     </div>
+
+    <div class="setup-row" id="share-row">
+      <div class="setup-lbl">Live Share</div>
+      <input class="dsel" id="relay-url" type="text" placeholder="wss://your-relay-url/ws" style="flex:2;min-width:200px">
+      <button class="cbtn" id="share-btn">Start Sharing</button>
+      <div class="sp"><div class="sd" id="share-sd"></div><span id="share-sl">Not sharing</span></div>
+      <div id="share-msg" style="width:100%"></div>
+      <div id="share-link-box" style="display:none;width:100%;align-items:center;gap:8px;margin-top:2px">
+        <input class="dsel" id="share-link" type="text" readonly style="flex:1;min-width:200px;color:var(--accent)">
+        <button class="cbtn" id="share-copy">Copy Link</button>
+      </div>
+    </div>
+
+    <div class="viewer-status" id="viewer-status" style="display:none"></div>
 
     <div class="signal-panel" id="signal-panel" style="display:none">
       <div class="plbl">Signal Monitor</div>
@@ -366,6 +385,17 @@
 <script>
 (function(){
 'use strict';
+
+/* ── Live-viewer mode ─────────────────────────────────────────
+   A URL of the form "?view=<code>&relay=<wss-url>" turns this same
+   page into a read-only mirror: no Web MIDI, no HUI decoding at all
+   -- it just connects to the relay as a viewer and pastes in
+   whatever HTML the broadcaster (the machine actually next to Pro
+   Tools) is sending. See wireLiveShare() near the bottom of this
+   file for the broadcaster side and initViewerMode() for this side. */
+var urlParams = new URLSearchParams(location.search);
+var viewCode = urlParams.get('view');
+var isViewerMode = !!viewCode;
 
 /* ═══════════════════════════════════════════════════════════
    HUI COUNTER DECODE — re-derived from a real MIDI Monitor capture
@@ -1182,7 +1212,219 @@ wireToggle('tg-debug', false, function(on){
   setUiScale(+load('uiScale', DEFAULTS.uiScale), false);
 })();
 
-buildSig(); render(); setPlay(true);
+/* ── Live Share : broadcaster side ────────────────────────────
+   "Start Sharing" opens a WebSocket to Felipe's own relay (see
+   /relay in the repo -- a small Node server he runs and points this
+   at) and pushes small HTML snapshots of the three containers that
+   actually matter to a remote viewer -- the hero counter, the Take
+   Log, and the Play/Record/Loop/Online LED row -- any time any of
+   them changes. A MutationObserver watches those containers instead
+   of hooking every decode function individually, so this never has
+   to be kept in sync by hand as the counter logic evolves: whatever
+   is genuinely on screen is exactly what gets sent, debounced to
+   roughly 10/sec so a burst of HUI messages doesn't flood the relay.
+   The relay never sees raw MIDI or does any HUI decoding -- only
+   already-rendered HTML crosses the network. */
+var SHARE_CONTAINERS = ['.ledwin', '.recband', '.sgrid-mini', '.rtabs'];
+var shareWs = null, shareRoomCode = null, shareObserver = null, shareSendTimer = null;
+
+function randomShareCode() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
+  var s = '';
+  for (var i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+function buildShareSnapshot() {
+  var parts = {};
+  SHARE_CONTAINERS.forEach(function(sel){
+    var el = document.querySelector(sel);
+    if (el) parts[sel] = el.innerHTML;
+  });
+  return { type: 'state', parts: parts };
+}
+function sendShareSnapshotNow() {
+  if (!shareWs || shareWs.readyState !== 1) return;
+  try { shareWs.send(JSON.stringify(buildShareSnapshot())); } catch(e) {}
+}
+function scheduleShareSnapshot() {
+  if (shareSendTimer) return;
+  shareSendTimer = setTimeout(function(){ shareSendTimer = null; sendShareSnapshotNow(); }, 90);
+}
+
+function wireLiveShare() {
+  var relayInput = document.getElementById('relay-url');
+  var shareBtn = document.getElementById('share-btn');
+  var shareSd = document.getElementById('share-sd');
+  var shareSl = document.getElementById('share-sl');
+  var shareMsg = document.getElementById('share-msg');
+  var shareLinkBox = document.getElementById('share-link-box');
+  var shareLinkInput = document.getElementById('share-link');
+  var shareCopyBtn = document.getElementById('share-copy');
+
+  try {
+    var savedRelay = localStorage.getItem('bgpromidi-relay-url');
+    if (savedRelay) relayInput.value = savedRelay;
+  } catch(e) {}
+
+  function setShareStatus(live, text) {
+    shareSd.classList.toggle('on', live);
+    shareSl.textContent = text;
+  }
+
+  function stopSharing() {
+    if (shareObserver) { shareObserver.disconnect(); shareObserver = null; }
+    if (shareSendTimer) { clearTimeout(shareSendTimer); shareSendTimer = null; }
+    if (shareWs) { try { shareWs.close(1000, 'stopped'); } catch(e) {} }
+    shareWs = null; shareRoomCode = null;
+    shareBtn.textContent = 'Start Sharing';
+    shareLinkBox.style.display = 'none';
+    setShareStatus(false, 'Not sharing');
+  }
+
+  function startSharing() {
+    var url = relayInput.value.trim();
+    if (!url) {
+      shareMsg.innerHTML = '<div class="mmsg">Enter your relay\'s address first (e.g. wss://your-tunnel-address/ws).</div>';
+      return;
+    }
+    try { localStorage.setItem('bgpromidi-relay-url', url); } catch(e) {}
+    shareMsg.innerHTML = '';
+    shareRoomCode = randomShareCode();
+    setShareStatus(false, 'Connecting…');
+
+    var ws;
+    try {
+      var sep = url.indexOf('?') >= 0 ? '&' : '?';
+      ws = new WebSocket(url + sep + 'role=broadcast&session=' + shareRoomCode);
+    } catch(e) {
+      shareMsg.innerHTML = '<div class="mmsg">That doesn\'t look like a valid relay address.</div>';
+      return;
+    }
+    shareWs = ws;
+
+    ws.onopen = function(){
+      if (shareWs !== ws) return;
+      setShareStatus(true, 'Live');
+      shareBtn.textContent = 'Stop Sharing';
+      var link = location.href.split('?')[0].split('#')[0] + '?view=' + shareRoomCode + '&relay=' + encodeURIComponent(url);
+      shareLinkInput.value = link;
+      shareLinkBox.style.display = 'flex';
+
+      if (shareObserver) shareObserver.disconnect();
+      shareObserver = new MutationObserver(scheduleShareSnapshot);
+      SHARE_CONTAINERS.forEach(function(sel){
+        var el = document.querySelector(sel);
+        if (el) shareObserver.observe(el, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['class','style']});
+      });
+      sendShareSnapshotNow();
+    };
+    ws.onclose = function(){
+      if (shareWs !== ws) return;
+      setShareStatus(false, 'Disconnected');
+      shareBtn.textContent = 'Start Sharing';
+      if (shareObserver) { shareObserver.disconnect(); shareObserver = null; }
+      shareWs = null;
+    };
+    ws.onerror = function(){
+      if (shareWs !== ws) return;
+      shareMsg.innerHTML = '<div class="mmsg">Couldn\'t reach that relay. Check the address and that it\'s running.</div>';
+    };
+  }
+
+  shareBtn.addEventListener('click', function(){
+    if (shareWs) stopSharing(); else startSharing();
+  });
+  shareCopyBtn.addEventListener('click', function(){
+    shareLinkInput.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    if (navigator.clipboard) { try { navigator.clipboard.writeText(shareLinkInput.value); } catch(e) {} }
+    var orig = shareCopyBtn.textContent;
+    shareCopyBtn.textContent = 'Copied!';
+    setTimeout(function(){ shareCopyBtn.textContent = orig; }, 1400);
+  });
+}
+
+/* ── Live Share : viewer side ─────────────────────────────────
+   No Web MIDI, no HUI decoding, no local panels that would be
+   meaningless without a real MIDI connection -- just a WebSocket to
+   the same relay as a read-only viewer, pasting in whatever HTML
+   the broadcaster sends. Reconnects with gentle backoff if the
+   connection drops (a laptop sleeping, Wi-Fi hiccup, etc.) since
+   this is meant to be left open on someone's screen for a while. */
+function initViewerMode() {
+  ['midi-setup-row','share-row','signal-panel','debug-row','transport-strip','panel-controls-lbl'].forEach(function(id){
+    var el = document.getElementById(id) || document.querySelector('.' + id);
+    if (el) el.style.display = 'none';
+  });
+  // Panel Controls toggles are meaningless without a local MIDI feed
+  // to toggle -- but the Session LEDs (.sgrid-mini) right below them
+  // are mirrored from the broadcaster, so the .rack-panel itself and
+  // the "Session" label stay visible.
+  document.querySelectorAll('.local-only').forEach(function(el){ el.style.display = 'none'; });
+  var rtabs = document.querySelector('.rtabs');
+  if (rtabs) rtabs.style.pointerEvents = 'none';
+
+  var status = document.getElementById('viewer-status');
+  status.style.display = 'flex';
+  function setStatus(live, text) {
+    status.classList.toggle('live', live);
+    status.innerHTML = '<div class="sd' + (live ? ' on' : '') + '"></div><span>' + text + '</span>';
+  }
+  setStatus(false, 'Connecting to live session ' + viewCode + '…');
+
+  var relayUrl = urlParams.get('relay');
+  if (!relayUrl) {
+    setStatus(false, 'No relay address in this link -- ask whoever sent it to resend.');
+    return;
+  }
+
+  var retryDelay = 2000;
+  var stopped = false;
+
+  function connect() {
+    var sep = relayUrl.indexOf('?') >= 0 ? '&' : '?';
+    var ws;
+    try {
+      ws = new WebSocket(relayUrl + sep + 'role=view&session=' + encodeURIComponent(viewCode));
+    } catch(e) {
+      setStatus(false, 'Invalid relay address in this link.');
+      return;
+    }
+    ws.onopen = function(){ retryDelay = 2000; };
+    ws.onmessage = function(ev){
+      var msg;
+      try { msg = JSON.parse(ev.data); } catch(e) { return; }
+      if (msg.type === 'waiting') {
+        setStatus(true, 'Connected -- waiting for the broadcaster to start sharing…');
+      } else if (msg.type === 'broadcaster-left') {
+        setStatus(true, 'Broadcaster disconnected -- waiting for them to come back…');
+      } else if (msg.type === 'broadcaster-joined') {
+        setStatus(true, 'Broadcaster connected…');
+      } else if (msg.type === 'state' && msg.parts) {
+        setStatus(true, 'Live');
+        Object.keys(msg.parts).forEach(function(sel){
+          var el = document.querySelector(sel);
+          if (el) el.innerHTML = msg.parts[sel];
+        });
+      }
+    };
+    ws.onclose = function(){
+      if (stopped) return;
+      setStatus(false, 'Disconnected -- reconnecting…');
+      setTimeout(connect, retryDelay);
+      retryDelay = Math.min(retryDelay * 1.5, 10000);
+    };
+    ws.onerror = function(){ try { ws.close(); } catch(e) {} };
+  }
+  connect();
+}
+
+if (isViewerMode) {
+  initViewerMode();
+} else {
+  wireLiveShare();
+  buildSig(); render(); setPlay(true);
+}
 })();
 </script>
 </body>
