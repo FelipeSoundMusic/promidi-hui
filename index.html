@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BG-ProMIDI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{--hui-green:#39ff6a;--hui-red:#ff3a3a;--hui-amber:#ffaa00;--hui-bg:#0d0f0d;--hui-panel:#111411;--hui-border:#1e2a1e;--hui-text:#a0c8a0;--hui-dim:#3a4a3a;--accent:var(--hui-green)}
@@ -41,18 +41,33 @@
        each field's box is a fixed reserved width, not sized to its
        current content. */
     .clabels{display:flex;align-items:flex-end;justify-content:center;flex-wrap:wrap;font-family:'Rajdhani',sans-serif}
-    .cw{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;font-family:'Chakra Petch',monospace;line-height:1}
+    /* Counter typeface: a bold grotesque sans (Helvetica Neue / Arial --
+       Felipe supplied a reference screenshot of the exact numeral style
+       he wants: tight/near-zero tracking, a flagged "1", an open "4" --
+       which is the classic Helvetica/Arial Bold numeral set, not the
+       geometric Chakra Petch used previously. Using the system stack
+       rather than a webfont means it renders pixel-native (no fallback
+       flash) and matches on any Mac/Win/Linux machine running the app. */
+    .cw{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;font-family:-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;line-height:1}
     .cfl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#3a4a3a;text-align:center;width:var(--w2);flex-shrink:0}
     .cfl.wbars{width:var(--w5)}
     .cfl.w3{width:calc(var(--w3) + 20px)}
     .cfl.w2p{width:calc(var(--w2) + 20px)}
     .cgap{width:var(--wsep);flex-shrink:0}
-    .cv{font-size:min(9.5vw,64px);font-weight:700;color:var(--accent);letter-spacing:1px;transition:color 0.3s;width:var(--w2);flex-shrink:0;text-align:center;text-shadow:0 0 22px rgba(57,255,106,0.4)}
+    .cv{font-size:min(9.5vw,64px);font-weight:800;color:var(--accent);letter-spacing:-0.01em;transition:color 0.3s;width:var(--w2);flex-shrink:0;text-align:center;text-shadow:0 0 22px rgba(57,255,106,0.4)}
     .cv.wbars{width:var(--w5)}
     .cv.w3{width:var(--w3)}
     .cv.inv{color:#050605;background:var(--accent);padding:0 10px;border-radius:5px;text-shadow:none;width:calc(var(--w2) + 20px)}
     .cv.inv.w3{width:calc(var(--w3) + 20px)}
-    .csep{font-size:min(6.5vw,44px);color:#1e2a1e;padding-bottom:4px;font-family:'Chakra Petch',monospace;width:var(--wsep);flex-shrink:0;text-align:center}
+    /* ":" / "." separators -- lit up the same bright accent as the
+       digits (was a near-invisible dim colour before). */
+    .csep{font-size:min(9.5vw,64px);font-weight:800;color:var(--accent);padding-bottom:0.02em;width:var(--wsep);flex-shrink:0;text-align:center;text-shadow:0 0 18px rgba(57,255,106,0.4);transition:color 0.3s}
+    /* "|" bar/beat divider -- drawn as a solid rectangle rather than the
+       "|" glyph, to match the thick, uniform divider bar in Felipe's
+       reference screenshot (a text "|" character reads as a thin,
+       faint hairline in most fonts, including the previous one here). */
+    .cbar{width:var(--wsep);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:min(9.5vw,64px)}
+    .cbar::before{content:"";display:block;width:0.16em;height:0.64em;border-radius:2px;background:var(--accent);box-shadow:0 0 16px rgba(57,255,106,0.5);transition:background 0.3s}
 
     /* ── side control rack ───────────────────────────────────── */
     .rack-panel{width:172px;flex-shrink:0;background:#0a0c0a;border:1px solid #1a1f1a;border-radius:6px;padding:14px 14px 16px;display:flex;flex-direction:column;gap:14px}
@@ -81,7 +96,7 @@
     .recbox{background:#040504;border:1px solid #1a1f1a;border-radius:6px;padding:8px 20px;text-align:center;box-shadow:inset 0 2px 7px rgba(0,0,0,0.6);transition:border-color 0.3s,box-shadow 0.3s}
     .recbox.active{border-color:var(--hui-red);box-shadow:inset 0 2px 7px rgba(0,0,0,0.6),0 0 20px rgba(255,58,58,0.18)}
     .recbox-lbl{font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:#3a4a3a;margin-bottom:4px}
-    .recbox-val{font-family:'Chakra Petch',monospace;font-weight:600;font-size:22px;line-height:1;letter-spacing:1px;color:#4a5a4a;transition:color 0.3s,text-shadow 0.3s}
+    .recbox-val{font-family:-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:800;font-size:22px;line-height:1;letter-spacing:-0.01em;color:#4a5a4a;transition:color 0.3s,text-shadow 0.3s}
     .recbox-val.setstart{color:var(--hui-green);text-shadow:0 0 14px rgba(57,255,106,0.5)}
     .recbox-val.setstop{color:var(--hui-red);text-shadow:0 0 14px rgba(255,58,58,0.5)}
     @keyframes recpulse{0%,100%{opacity:1}50%{opacity:0.3}}
@@ -177,9 +192,9 @@
           </div>
           <div class="cw">
             <div class="cv wbars" id="d-bars">1</div>
-            <div class="csep">|</div>
+            <div class="cbar"></div>
             <div class="cv" id="d-beat">1</div>
-            <div class="field-group opt-ticks"><div class="csep">|</div><div class="cv w3 inv" id="d-ticks">000</div></div>
+            <div class="field-group opt-ticks"><div class="cbar"></div><div class="cv w3 inv" id="d-ticks">000</div></div>
           </div>
         </div>
         <div id="disp-tc" style="display:none">
