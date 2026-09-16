@@ -117,9 +117,35 @@
     .sd.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
 
     /* ── viewer mode : read-only status line, no local MIDI panels ── */
-    .viewer-status{margin-top:18px;padding-top:16px;border-top:1px solid #1a1f1a;display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--hui-dim)}
+    .viewer-status{margin-top:18px;padding-top:16px;border-top:1px solid #1a1f1a;display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--hui-dim);flex-wrap:wrap}
     .viewer-status .sd{margin-right:2px}
     .viewer-status.live{color:var(--hui-text)}
+    .viewer-status-line{display:flex;align-items:center;gap:8px}
+    /* ViewMode toggle -- built once in initViewerMode() and left alone by
+       setStatus() (which only rewrites .viewer-status-line), so it stays
+       put and clickable through every connect/reconnect/live update. */
+    .vm-toggle{display:flex;gap:6px;margin-left:auto}
+    .vm-btn{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;padding:5px 10px;border:1px solid var(--hui-border);border-radius:4px;cursor:pointer;color:var(--hui-dim);background:transparent;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all 0.15s}
+    .vm-btn:hover{border-color:var(--hui-text);color:var(--hui-text)}
+    .vm-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(170,221,72,0.07)}
+
+    /* ── viewer mode : "Counter Only" -- strip everything but the LED
+       window itself. Session LEDs, Take Log, MIDI/Live Share rows, the
+       Customize drawer and the footer are all local-window furniture
+       that Felipe doesn't want on a screen meant to show nothing but
+       the counter. The ViewMode toggle is deliberately left visible
+       (just re-centred) so Counter Only is never a dead end. */
+    body.viewer-counter-only .platebar,
+    body.viewer-counter-only .rack-panel,
+    body.viewer-counter-only .recband,
+    body.viewer-counter-only .footer,
+    body.viewer-counter-only .custom-tab,
+    body.viewer-counter-only .custom-panel,
+    body.viewer-counter-only .screw{display:none!important}
+    body.viewer-counter-only .rack{background:none;border:none;box-shadow:none;padding:0}
+    body.viewer-counter-only .viewer-status{margin-top:16px;padding-top:0;border-top:none;justify-content:center}
+    body.viewer-counter-only .viewer-status-line{display:none}
+    body.viewer-counter-only .vm-toggle{margin-left:0}
 
     /* ── signal monitor : hidden by default ──────────────────── */
     .signal-panel{margin-top:16px;padding-top:16px;border-top:1px solid #1a1f1a}
@@ -1240,7 +1266,11 @@ function buildShareSnapshot() {
     var el = document.querySelector(sel);
     if (el) parts[sel] = el.innerHTML;
   });
-  return { type: 'state', parts: parts };
+  // isRec drives setAccent()'s red/green swap, but setAccent() applies it
+  // as an inline style on #app and #logo -- both outside SHARE_CONTAINERS,
+  // so the MutationObserver never sees it. Send it explicitly alongside
+  // the mirrored HTML so the viewer can reproduce the same colour swap.
+  return { type: 'state', parts: parts, rec: isRec };
 }
 function sendShareSnapshotNow() {
   if (!shareWs || shareWs.readyState !== 1) return;
@@ -1366,11 +1396,40 @@ function initViewerMode() {
 
   var status = document.getElementById('viewer-status');
   status.style.display = 'flex';
+  // The status dot/text is its own child so setStatus() can rewrite it
+  // on every connect/reconnect/live update without wiping out the
+  // ViewMode toggle built alongside it below.
+  var statusLine = document.createElement('div');
+  statusLine.className = 'viewer-status-line';
+  status.appendChild(statusLine);
   function setStatus(live, text) {
     status.classList.toggle('live', live);
-    status.innerHTML = '<div class="sd' + (live ? ' on' : '') + '"></div><span>' + text + '</span>';
+    statusLine.innerHTML = '<div class="sd' + (live ? ' on' : '') + '"></div><span>' + text + '</span>';
   }
   setStatus(false, 'Connecting to live session ' + viewCode + '…');
+
+  // ViewMode: "Default" (full mirrored layout) vs "Counter Only" (just
+  // the LED window -- see the body.viewer-counter-only rules in <style>).
+  // Persisted per-browser so reloading the same viewer link keeps it.
+  var vmToggle = document.createElement('div');
+  vmToggle.className = 'vm-toggle';
+  vmToggle.innerHTML =
+    '<button type="button" class="vm-btn" data-vm="default">Default</button>' +
+    '<button type="button" class="vm-btn" data-vm="counter">Counter Only</button>';
+  status.appendChild(vmToggle);
+  function applyViewMode(mode) {
+    document.body.classList.toggle('viewer-counter-only', mode === 'counter');
+    vmToggle.querySelectorAll('.vm-btn').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-vm') === mode);
+    });
+    try { localStorage.setItem('bgpromidi-viewer-mode', mode); } catch(e) {}
+  }
+  vmToggle.querySelectorAll('.vm-btn').forEach(function(b){
+    b.addEventListener('click', function(){ applyViewMode(b.getAttribute('data-vm')); });
+  });
+  var savedMode = 'default';
+  try { savedMode = localStorage.getItem('bgpromidi-viewer-mode') || 'default'; } catch(e) {}
+  applyViewMode(savedMode);
 
   var relayUrl = urlParams.get('relay');
   if (!relayUrl) {
@@ -1406,6 +1465,15 @@ function initViewerMode() {
           var el = document.querySelector(sel);
           if (el) el.innerHTML = msg.parts[sel];
         });
+        // Mirror the broadcaster's record-state colour swap (see the
+        // comment in buildShareSnapshot() -- this can't ride along with
+        // the mirrored HTML above since it lives on #app/#logo).
+        if (typeof msg.rec === 'boolean') {
+          var appEl = document.getElementById('app');
+          var logoEl = document.getElementById('logo');
+          if (appEl) appEl.style.setProperty('--accent', msg.rec ? 'var(--hui-red)' : 'var(--hui-green)');
+          if (logoEl) logoEl.style.color = msg.rec ? 'var(--hui-red)' : 'var(--hui-green)';
+        }
       }
     };
     ws.onclose = function(){
