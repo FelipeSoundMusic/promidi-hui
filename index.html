@@ -149,12 +149,13 @@
     body.broadcast-view .custom-panel,
     body.broadcast-view .screw{display:none!important}
     body.broadcast-view .platebar{margin-bottom:0}
-    /* #app's normal 860px max-width is a "rack unit" framing choice
-       for the default view -- broadcast has no side content competing
-       for space, so let it use the window it's actually given instead
-       (capped well above any realistic OBS crop, just as a backstop
-       against an absurd digit size on an ultrawide monitor). */
-    body.broadcast-view #app{max-width:1700px}
+    body.broadcast-view{padding:16px}
+    /* #app's normal 860px max-width is a "rack unit" framing choice for
+       the default view -- Felipe wants Broadcast to genuinely fill
+       whatever window it's given (so the OBS capture isn't a small
+       island in a sea of black), so that cap is removed outright here
+       rather than just raised. */
+    body.broadcast-view #app{max-width:none;width:100%}
     /* --bf is the one broadcast digit scale everything else derives
        from via calc(), so the counter and its "|"/":" dividers always
        grow together in fixed proportion -- unlike the mismatched,
@@ -162,20 +163,30 @@
        let digits overflow their columns and crowd the dividers at
        normal window widths). The ratios match the default view's own
        --w2/--w3/--w5/--wsep-to-font proportions, except --wsep gets
-       noticeably more room, which is the specific fix for "numbers
-       too close to the separator". Tuned so the worst case (Bars|Beat
-       with Ticks shown, the widest row the app ever lays out) doesn't
-       wrap at typical OBS window widths -- verified with screenshots
-       at 820/1280/1400px. */
+       noticeably more room (the earlier fix for digits crowding the
+       separators) and --w5 (the Bars field) gets a lot more: Bars is
+       the one field whose digit COUNT actually varies as a session
+       runs long (9, then 99, then 999...), and since each field is a
+       fixed-width box that centers its text rather than resizing
+       around it (deliberately, elsewhere in the app, to avoid the
+       other fields visibly shifting every time Bars gains a digit),
+       too narrow a box means the centered text simply overflows its
+       own box and bleeds into its neighbours -- which is exactly the
+       "numbers overlapping" Felipe saw once Bars reached three digits.
+       --w5 is sized here for five comfortably, not three. No px
+       ceiling on --bf itself either, now that #app can actually grow
+       to use it -- verified with screenshots from 700px up to 2560px,
+       and with Bars forced up to a 5-digit value, to confirm neither
+       wrapping nor overflow happens at any size actually tested. */
     body.broadcast-view .rack{
-      --bf:min(8vw,132px);
+      --bf:9.5vw;
       --w2:calc(var(--bf) * 1.3);
       --w3:calc(var(--bf) * 1.9);
-      --w5:calc(var(--bf) * 3);
+      --w5:calc(var(--bf) * 4.6);
       --wsep:calc(var(--bf) * 0.62);
       background:none;border:none;box-shadow:none;padding:40px 28px;zoom:1!important
     }
-    body.broadcast-view .ledwin{zoom:1!important;padding:40px 12px 34px}
+    body.broadcast-view .ledwin{zoom:1!important;padding:40px 16px 34px}
     body.broadcast-view .cv,body.broadcast-view .csep,body.broadcast-view .cbar{font-size:var(--bf)!important}
     body.broadcast-view .cfl{font-size:13px;letter-spacing:2.5px;color:#4a5a4a}
     body.broadcast-view .recband{margin-top:38px;justify-content:center}
@@ -183,13 +194,13 @@
     body.broadcast-view .recbox{padding:12px 30px}
     body.broadcast-view .recbox-lbl{font-size:10px;letter-spacing:2.5px;margin-bottom:6px}
     body.broadcast-view .recbox-val{font-size:42px}
-    /* Pinned to the rack itself (which is position:relative), not the
-       viewport -- a viewport-fixed corner can end up sitting right on
-       top of the start/stop boxes once everything else is hidden and
-       the window is sized close to the content, which is exactly what
-       happened before this fix. Top-right keeps it well clear of the
-       recgrid, which always sits at the bottom. */
-    body.broadcast-view .viewtabs{position:absolute;top:14px;right:16px;opacity:0.12;transition:opacity 0.15s;z-index:10}
+    /* Moved to the end of .rack's document flow by wireViews() when
+       Broadcast is entered (see the JS), so it sits below the
+       start/stop boxes with a real margin rather than a guessed pixel
+       offset -- see the comment there for why a fixed/absolute corner
+       position kept drifting into the counter or the boxes as either
+       one changed size. */
+    body.broadcast-view .viewtabs{width:100%;justify-content:center;margin-top:48px;opacity:0.12;transition:opacity 0.15s}
     body.broadcast-view .viewtabs:hover{opacity:1}
 
     /* ── signal monitor : hidden by default ──────────────────── */
@@ -1275,8 +1286,22 @@ wireToggle('tg-debug', false, function(on){
    of the display-mode tabs' global '.rtab' wiring below. */
 function wireViews() {
   var viewTabs = document.getElementById('view-tabs');
+  var rack = document.querySelector('.rack');
+  // Broadcast's counter can be any size depending on window width and
+  // how many digits Bars has grown to, so a fixed pixel position for
+  // this toggle (tried first: pinned to a viewport/rack corner) kept
+  // drifting into the counter or the start/stop boxes as those things
+  // changed size. Moving the toggle to the end of the document flow
+  // instead -- below the start/stop boxes, centred -- means it can
+  // never overlap either one, regardless of how big Broadcast gets.
+  var viewTabsHome = { parent: viewTabs.parentNode, next: viewTabs.nextSibling };
   function applyViewMode(mode) {
     document.body.classList.toggle('broadcast-view', mode === 'broadcast');
+    if (mode === 'broadcast') {
+      rack.appendChild(viewTabs);
+    } else if (viewTabs.parentNode !== viewTabsHome.parent) {
+      viewTabsHome.parent.insertBefore(viewTabs, viewTabsHome.next);
+    }
     viewTabs.querySelectorAll('.vtab').forEach(function(b){
       b.classList.toggle('active', b.getAttribute('data-view') === mode);
     });
