@@ -23,9 +23,13 @@
       "icon": "build/icon.png",
       "identity": null,
       "target": [
-        { "target": "dmg", "arch": ["arm64"] },
-        { "target": "zip", "arch": ["arm64"] }
+        { "target": "pkg", "arch": ["arm64"] }
       ]
+    },
+    "pkg": {
+      "installLocation": "/Applications",
+      "allowAnywhere": false,
+      "allowCurrentUserHome": false
     },
     "directories": {
       "output": "dist-electron"
