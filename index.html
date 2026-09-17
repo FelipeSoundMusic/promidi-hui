@@ -182,7 +182,17 @@
       --bf:9.5vw;
       --w2:calc(var(--bf) * 1.3);
       --w3:calc(var(--bf) * 1.9);
-      --w5:calc(var(--bf) * 4.6);
+      /* Bars is sized wide enough for five digits so a long session
+         never overflows it (see the Round 3 fix), but that leaves
+         visible slack to the right of shorter bar numbers before the
+         "|" divider -- reading as too big a gap between Bars and
+         Beat. Trimmed a bit off that reserved width, proportionally
+         (as a fraction of --bf, not a flat px number) so the gap
+         tightens consistently at any window size without eating into
+         the safety margin a 5-digit bar count needs at small sizes --
+         a flat px trim was tried first and nearly touched a 5-digit
+         number's last digit against the divider on a narrow window. */
+      --w5:calc(var(--bf) * 4.28);
       --wsep:calc(var(--bf) * 0.62);
       background:none;border:none;box-shadow:none;padding:40px 28px;zoom:1!important
     }
