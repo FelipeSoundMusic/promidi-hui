@@ -25,9 +25,9 @@
     .plate-title{font-size:19px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--accent);transition:color 0.3s;line-height:1.3}
     .plate-sub{font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:#4a5a4a;margin-top:2px}
     .rtabs{display:flex;gap:6px}
-    .rtab{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border:1px solid var(--hui-border);border-radius:4px;cursor:pointer;color:var(--hui-dim);background:transparent;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all 0.15s}
-    .rtab:hover{border-color:var(--hui-text);color:var(--hui-text)}
-    .rtab.active{border-color:var(--accent);color:var(--accent);background:rgba(170,221,72,0.07)}
+    .rtab,.vtab{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border:1px solid var(--hui-border);border-radius:4px;cursor:pointer;color:var(--hui-dim);background:transparent;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all 0.15s}
+    .rtab:hover,.vtab:hover{border-color:var(--hui-text);color:var(--hui-text)}
+    .rtab.active,.vtab.active{border-color:var(--accent);color:var(--accent);background:rgba(170,221,72,0.07)}
 
     /* ── main row: LED window + control rack ─────────────────── */
     .mainrow{display:flex;gap:18px;align-items:stretch}
@@ -116,36 +116,47 @@
     .sd{width:7px;height:7px;border-radius:50%;background:var(--hui-dim);transition:background 0.3s,box-shadow 0.3s}
     .sd.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
 
-    /* ── viewer mode : read-only status line, no local MIDI panels ── */
-    .viewer-status{margin-top:18px;padding-top:16px;border-top:1px solid #1a1f1a;display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--hui-dim);flex-wrap:wrap}
-    .viewer-status .sd{margin-right:2px}
-    .viewer-status.live{color:var(--hui-text)}
-    .viewer-status-line{display:flex;align-items:center;gap:8px}
-    /* ViewMode toggle -- built once in initViewerMode() and left alone by
-       setStatus() (which only rewrites .viewer-status-line), so it stays
-       put and clickable through every connect/reconnect/live update. */
-    .vm-toggle{display:flex;gap:6px;margin-left:auto}
-    .vm-btn{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;padding:5px 10px;border:1px solid var(--hui-border);border-radius:4px;cursor:pointer;color:var(--hui-dim);background:transparent;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all 0.15s}
-    .vm-btn:hover{border-color:var(--hui-text);color:var(--hui-text)}
-    .vm-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(170,221,72,0.07)}
+    /* ── Views menu : Default vs Broadcast ───────────────────── */
+    .viewtabs{display:flex;align-items:center;gap:8px}
+    .viewtabs-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a5a4a}
 
-    /* ── viewer mode : "Counter Only" -- strip everything but the LED
-       window itself. Session LEDs, Take Log, MIDI/Live Share rows, the
-       Customize drawer and the footer are all local-window furniture
-       that Felipe doesn't want on a screen meant to show nothing but
-       the counter. The ViewMode toggle is deliberately left visible
-       (just re-centred) so Counter Only is never a dead end. */
-    body.viewer-counter-only .platebar,
-    body.viewer-counter-only .rack-panel,
-    body.viewer-counter-only .recband,
-    body.viewer-counter-only .footer,
-    body.viewer-counter-only .custom-tab,
-    body.viewer-counter-only .custom-panel,
-    body.viewer-counter-only .screw{display:none!important}
-    body.viewer-counter-only .rack{background:none;border:none;box-shadow:none;padding:0}
-    body.viewer-counter-only .viewer-status{margin-top:16px;padding-top:0;border-top:none;justify-content:center}
-    body.viewer-counter-only .viewer-status-line{display:none}
-    body.viewer-counter-only .vm-toggle{margin-left:0}
+    /* ── Broadcast view : nothing but the counter and the start/stop
+       bars, for capturing this window straight into OBS. Everything
+       else -- brand plate, mode tabs, side rack, Take Log's own label
+       row, MIDI Setup, Signal Monitor, Debug, Transport, footer,
+       Customize -- is local-window furniture that has no business on
+       a broadcast frame. Record/playback colour needs no special
+       handling here: this is the same live DOM as the main view, not
+       a mirrored copy, so --accent (and any Customize accent choice)
+       already applies automatically. The counter's size is pinned to
+       a fixed, generous scale regardless of the Customize drawer's
+       Counter Size / UI Scale sliders -- broadcast framing shouldn't
+       shift because of an unrelated local preference. The Views
+       control itself is dimmed to a corner tab rather than removed
+       outright, so there's always a way back without hunting for it;
+       Escape does the same from the keyboard (see wireViews() in the
+       script). */
+    body.broadcast-view .plate,
+    body.broadcast-view .platebar .rtabs,
+    body.broadcast-view .rack-panel,
+    body.broadcast-view .recband-top,
+    body.broadcast-view #midi-setup-row,
+    body.broadcast-view .signal-panel,
+    body.broadcast-view .drow,
+    body.broadcast-view .transport-strip,
+    body.broadcast-view .footer,
+    body.broadcast-view .custom-tab,
+    body.broadcast-view .custom-panel,
+    body.broadcast-view .screw{display:none!important}
+    body.broadcast-view .platebar{margin-bottom:0}
+    body.broadcast-view .rack{background:none;border:none;box-shadow:none;padding:0;zoom:1!important}
+    body.broadcast-view .ledwin{zoom:1!important;padding:56px 12px}
+    body.broadcast-view .cv,body.broadcast-view .csep{font-size:min(13vw,150px)!important}
+    body.broadcast-view .cbar{font-size:min(13vw,150px)!important}
+    body.broadcast-view .recband{margin-top:36px}
+    body.broadcast-view .recbox-val{font-size:30px}
+    body.broadcast-view .viewtabs{position:fixed;bottom:10px;right:14px;opacity:0.12;transition:opacity 0.15s;z-index:10}
+    body.broadcast-view .viewtabs:hover{opacity:1}
 
     /* ── signal monitor : hidden by default ──────────────────── */
     .signal-panel{margin-top:16px;padding-top:16px;border-top:1px solid #1a1f1a}
@@ -226,6 +237,11 @@
           <div class="plate-sub">British Grove Studios &middot; HUI Unit</div>
         </div>
       </div>
+      <div class="viewtabs" id="view-tabs">
+        <span class="viewtabs-lbl">Views</span>
+        <button class="vtab active" data-view="default" type="button">Default</button>
+        <button class="vtab" data-view="broadcast" type="button">Broadcast</button>
+      </div>
       <div class="rtabs">
         <button class="rtab active" data-mode="bars">Bars|Beats</button>
         <button class="rtab" data-mode="timecode">Timecode</button>
@@ -283,10 +299,10 @@
       </div>
 
       <div class="rack-panel">
-        <div class="rack-panel-lbl" id="panel-controls-lbl">Panel Controls</div>
-        <div class="rtoggle local-only" id="tg-ticks"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Ticks / ms</span></div>
-        <div class="rtoggle local-only" id="tg-signal"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Signal Mon.</span></div>
-        <div class="rtoggle local-only" id="tg-debug"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Debug Info</span></div>
+        <div class="rack-panel-lbl">Panel Controls</div>
+        <div class="rtoggle" id="tg-ticks"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Ticks / ms</span></div>
+        <div class="rtoggle" id="tg-signal"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Signal Mon.</span></div>
+        <div class="rtoggle" id="tg-debug"><div class="rtoggle-sw"><div class="rtoggle-dot"></div></div><span>Debug Info</span></div>
         <div class="rack-panel-lbl" style="margin-top:2px">Session</div>
         <div class="sgrid-mini">
           <div class="si lit" id="i-play"><div class="sled on" id="l-play"></div>Play</div>
@@ -323,20 +339,6 @@
       <div class="sp"><div class="sd" id="sd"></div><span id="sl">No MIDI Access</span></div>
       <div id="midi-msg"></div>
     </div>
-
-    <div class="setup-row" id="share-row">
-      <div class="setup-lbl">Live Share</div>
-      <input class="dsel" id="relay-url" type="text" placeholder="wss://your-relay-url/ws" style="flex:2;min-width:200px">
-      <button class="cbtn" id="share-btn">Start Sharing</button>
-      <div class="sp"><div class="sd" id="share-sd"></div><span id="share-sl">Not sharing</span></div>
-      <div id="share-msg" style="width:100%"></div>
-      <div id="share-link-box" style="display:none;width:100%;align-items:center;gap:8px;margin-top:2px">
-        <input class="dsel" id="share-link" type="text" readonly style="flex:1;min-width:200px;color:var(--accent)">
-        <button class="cbtn" id="share-copy">Copy Link</button>
-      </div>
-    </div>
-
-    <div class="viewer-status" id="viewer-status" style="display:none"></div>
 
     <div class="signal-panel" id="signal-panel" style="display:none">
       <div class="plbl">Signal Monitor</div>
@@ -411,17 +413,6 @@
 <script>
 (function(){
 'use strict';
-
-/* ── Live-viewer mode ─────────────────────────────────────────
-   A URL of the form "?view=<code>&relay=<wss-url>" turns this same
-   page into a read-only mirror: no Web MIDI, no HUI decoding at all
-   -- it just connects to the relay as a viewer and pastes in
-   whatever HTML the broadcaster (the machine actually next to Pro
-   Tools) is sending. See wireLiveShare() near the bottom of this
-   file for the broadcaster side and initViewerMode() for this side. */
-var urlParams = new URLSearchParams(location.search);
-var viewCode = urlParams.get('view');
-var isViewerMode = !!viewCode;
 
 /* ═══════════════════════════════════════════════════════════
    HUI COUNTER DECODE — re-derived from a real MIDI Monitor capture
@@ -1238,261 +1229,41 @@ wireToggle('tg-debug', false, function(on){
   setUiScale(+load('uiScale', DEFAULTS.uiScale), false);
 })();
 
-/* ── Live Share : broadcaster side ────────────────────────────
-   "Start Sharing" opens a WebSocket to Felipe's own relay (see
-   /relay in the repo -- a small Node server he runs and points this
-   at) and pushes small HTML snapshots of the three containers that
-   actually matter to a remote viewer -- the hero counter, the Take
-   Log, and the Play/Record/Loop/Online LED row -- any time any of
-   them changes. A MutationObserver watches those containers instead
-   of hooking every decode function individually, so this never has
-   to be kept in sync by hand as the counter logic evolves: whatever
-   is genuinely on screen is exactly what gets sent, debounced to
-   roughly 10/sec so a burst of HUI messages doesn't flood the relay.
-   The relay never sees raw MIDI or does any HUI decoding -- only
-   already-rendered HTML crosses the network. */
-var SHARE_CONTAINERS = ['.ledwin', '.recband', '.sgrid-mini', '.rtabs'];
-var shareWs = null, shareRoomCode = null, shareObserver = null, shareSendTimer = null;
-
-function randomShareCode() {
-  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
-  var s = '';
-  for (var i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
-}
-function buildShareSnapshot() {
-  var parts = {};
-  SHARE_CONTAINERS.forEach(function(sel){
-    var el = document.querySelector(sel);
-    if (el) parts[sel] = el.innerHTML;
-  });
-  // isRec drives setAccent()'s red/green swap, but setAccent() applies it
-  // as an inline style on #app and #logo -- both outside SHARE_CONTAINERS,
-  // so the MutationObserver never sees it. Send it explicitly alongside
-  // the mirrored HTML so the viewer can reproduce the same colour swap.
-  return { type: 'state', parts: parts, rec: isRec };
-}
-function sendShareSnapshotNow() {
-  if (!shareWs || shareWs.readyState !== 1) return;
-  try { shareWs.send(JSON.stringify(buildShareSnapshot())); } catch(e) {}
-}
-function scheduleShareSnapshot() {
-  if (shareSendTimer) return;
-  shareSendTimer = setTimeout(function(){ shareSendTimer = null; sendShareSnapshotNow(); }, 90);
-}
-
-function wireLiveShare() {
-  var relayInput = document.getElementById('relay-url');
-  var shareBtn = document.getElementById('share-btn');
-  var shareSd = document.getElementById('share-sd');
-  var shareSl = document.getElementById('share-sl');
-  var shareMsg = document.getElementById('share-msg');
-  var shareLinkBox = document.getElementById('share-link-box');
-  var shareLinkInput = document.getElementById('share-link');
-  var shareCopyBtn = document.getElementById('share-copy');
-
-  try {
-    var savedRelay = localStorage.getItem('bgpromidi-relay-url');
-    if (savedRelay) relayInput.value = savedRelay;
-  } catch(e) {}
-
-  function setShareStatus(live, text) {
-    shareSd.classList.toggle('on', live);
-    shareSl.textContent = text;
-  }
-
-  function stopSharing() {
-    if (shareObserver) { shareObserver.disconnect(); shareObserver = null; }
-    if (shareSendTimer) { clearTimeout(shareSendTimer); shareSendTimer = null; }
-    if (shareWs) { try { shareWs.close(1000, 'stopped'); } catch(e) {} }
-    shareWs = null; shareRoomCode = null;
-    shareBtn.textContent = 'Start Sharing';
-    shareLinkBox.style.display = 'none';
-    setShareStatus(false, 'Not sharing');
-  }
-
-  function startSharing() {
-    var url = relayInput.value.trim();
-    if (!url) {
-      shareMsg.innerHTML = '<div class="mmsg">Enter your relay\'s address first (e.g. wss://your-tunnel-address/ws).</div>';
-      return;
-    }
-    try { localStorage.setItem('bgpromidi-relay-url', url); } catch(e) {}
-    shareMsg.innerHTML = '';
-    shareRoomCode = randomShareCode();
-    setShareStatus(false, 'Connecting…');
-
-    var ws;
-    try {
-      var sep = url.indexOf('?') >= 0 ? '&' : '?';
-      ws = new WebSocket(url + sep + 'role=broadcast&session=' + shareRoomCode);
-    } catch(e) {
-      shareMsg.innerHTML = '<div class="mmsg">That doesn\'t look like a valid relay address.</div>';
-      return;
-    }
-    shareWs = ws;
-
-    ws.onopen = function(){
-      if (shareWs !== ws) return;
-      setShareStatus(true, 'Live');
-      shareBtn.textContent = 'Stop Sharing';
-      var link = location.href.split('?')[0].split('#')[0] + '?view=' + shareRoomCode + '&relay=' + encodeURIComponent(url);
-      shareLinkInput.value = link;
-      shareLinkBox.style.display = 'flex';
-
-      if (shareObserver) shareObserver.disconnect();
-      shareObserver = new MutationObserver(scheduleShareSnapshot);
-      SHARE_CONTAINERS.forEach(function(sel){
-        var el = document.querySelector(sel);
-        if (el) shareObserver.observe(el, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['class','style']});
-      });
-      sendShareSnapshotNow();
-    };
-    ws.onclose = function(){
-      if (shareWs !== ws) return;
-      setShareStatus(false, 'Disconnected');
-      shareBtn.textContent = 'Start Sharing';
-      if (shareObserver) { shareObserver.disconnect(); shareObserver = null; }
-      shareWs = null;
-    };
-    ws.onerror = function(){
-      if (shareWs !== ws) return;
-      shareMsg.innerHTML = '<div class="mmsg">Couldn\'t reach that relay. Check the address and that it\'s running.</div>';
-    };
-  }
-
-  shareBtn.addEventListener('click', function(){
-    if (shareWs) stopSharing(); else startSharing();
-  });
-  shareCopyBtn.addEventListener('click', function(){
-    shareLinkInput.select();
-    try { document.execCommand('copy'); } catch(e) {}
-    if (navigator.clipboard) { try { navigator.clipboard.writeText(shareLinkInput.value); } catch(e) {} }
-    var orig = shareCopyBtn.textContent;
-    shareCopyBtn.textContent = 'Copied!';
-    setTimeout(function(){ shareCopyBtn.textContent = orig; }, 1400);
-  });
-}
-
-/* ── Live Share : viewer side ─────────────────────────────────
-   No Web MIDI, no HUI decoding, no local panels that would be
-   meaningless without a real MIDI connection -- just a WebSocket to
-   the same relay as a read-only viewer, pasting in whatever HTML
-   the broadcaster sends. Reconnects with gentle backoff if the
-   connection drops (a laptop sleeping, Wi-Fi hiccup, etc.) since
-   this is meant to be left open on someone's screen for a while. */
-function initViewerMode() {
-  ['midi-setup-row','share-row','signal-panel','debug-row','transport-strip','panel-controls-lbl'].forEach(function(id){
-    var el = document.getElementById(id) || document.querySelector('.' + id);
-    if (el) el.style.display = 'none';
-  });
-  // Panel Controls toggles are meaningless without a local MIDI feed
-  // to toggle -- but the Session LEDs (.sgrid-mini) right below them
-  // are mirrored from the broadcaster, so the .rack-panel itself and
-  // the "Session" label stay visible.
-  document.querySelectorAll('.local-only').forEach(function(el){ el.style.display = 'none'; });
-  var rtabs = document.querySelector('.rtabs');
-  if (rtabs) rtabs.style.pointerEvents = 'none';
-
-  var status = document.getElementById('viewer-status');
-  status.style.display = 'flex';
-  // The status dot/text is its own child so setStatus() can rewrite it
-  // on every connect/reconnect/live update without wiping out the
-  // ViewMode toggle built alongside it below.
-  var statusLine = document.createElement('div');
-  statusLine.className = 'viewer-status-line';
-  status.appendChild(statusLine);
-  function setStatus(live, text) {
-    status.classList.toggle('live', live);
-    statusLine.innerHTML = '<div class="sd' + (live ? ' on' : '') + '"></div><span>' + text + '</span>';
-  }
-  setStatus(false, 'Connecting to live session ' + viewCode + '…');
-
-  // ViewMode: "Default" (full mirrored layout) vs "Counter Only" (just
-  // the LED window -- see the body.viewer-counter-only rules in <style>).
-  // Persisted per-browser so reloading the same viewer link keeps it.
-  var vmToggle = document.createElement('div');
-  vmToggle.className = 'vm-toggle';
-  vmToggle.innerHTML =
-    '<button type="button" class="vm-btn" data-vm="default">Default</button>' +
-    '<button type="button" class="vm-btn" data-vm="counter">Counter Only</button>';
-  status.appendChild(vmToggle);
+/* ── Views : Default vs Broadcast ─────────────────────────────
+   "Broadcast" strips the page down to just the counter and the
+   start/stop bars for capturing this window straight into OBS --
+   see the body.broadcast-view rules in <style>. Everything here is
+   local, in the same page, on the same live DOM: no relay, no
+   network, no second device. Record/playback colour needs no extra
+   wiring to "carry over" because there's nothing to mirror -- it's
+   the exact same #app/#logo elements setAccent() already touches.
+   A dedicated .vtab class (not .rtab) keeps these two buttons out
+   of the display-mode tabs' global '.rtab' wiring below. */
+function wireViews() {
+  var viewTabs = document.getElementById('view-tabs');
   function applyViewMode(mode) {
-    document.body.classList.toggle('viewer-counter-only', mode === 'counter');
-    vmToggle.querySelectorAll('.vm-btn').forEach(function(b){
-      b.classList.toggle('active', b.getAttribute('data-vm') === mode);
+    document.body.classList.toggle('broadcast-view', mode === 'broadcast');
+    viewTabs.querySelectorAll('.vtab').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-view') === mode);
     });
-    try { localStorage.setItem('bgpromidi-viewer-mode', mode); } catch(e) {}
+    try { localStorage.setItem('bgpromidi-view-mode', mode); } catch(e) {}
   }
-  vmToggle.querySelectorAll('.vm-btn').forEach(function(b){
-    b.addEventListener('click', function(){ applyViewMode(b.getAttribute('data-vm')); });
+  viewTabs.querySelectorAll('.vtab').forEach(function(b){
+    b.addEventListener('click', function(){ applyViewMode(b.getAttribute('data-view')); });
   });
-  var savedMode = 'default';
-  try { savedMode = localStorage.getItem('bgpromidi-viewer-mode') || 'default'; } catch(e) {}
-  applyViewMode(savedMode);
-
-  var relayUrl = urlParams.get('relay');
-  if (!relayUrl) {
-    setStatus(false, 'No relay address in this link -- ask whoever sent it to resend.');
-    return;
-  }
-
-  var retryDelay = 2000;
-  var stopped = false;
-
-  function connect() {
-    var sep = relayUrl.indexOf('?') >= 0 ? '&' : '?';
-    var ws;
-    try {
-      ws = new WebSocket(relayUrl + sep + 'role=view&session=' + encodeURIComponent(viewCode));
-    } catch(e) {
-      setStatus(false, 'Invalid relay address in this link.');
-      return;
-    }
-    ws.onopen = function(){ retryDelay = 2000; };
-    ws.onmessage = function(ev){
-      var msg;
-      try { msg = JSON.parse(ev.data); } catch(e) { return; }
-      if (msg.type === 'waiting') {
-        setStatus(true, 'Connected -- waiting for the broadcaster to start sharing…');
-      } else if (msg.type === 'broadcaster-left') {
-        setStatus(true, 'Broadcaster disconnected -- waiting for them to come back…');
-      } else if (msg.type === 'broadcaster-joined') {
-        setStatus(true, 'Broadcaster connected…');
-      } else if (msg.type === 'state' && msg.parts) {
-        setStatus(true, 'Live');
-        Object.keys(msg.parts).forEach(function(sel){
-          var el = document.querySelector(sel);
-          if (el) el.innerHTML = msg.parts[sel];
-        });
-        // Mirror the broadcaster's record-state colour swap (see the
-        // comment in buildShareSnapshot() -- this can't ride along with
-        // the mirrored HTML above since it lives on #app/#logo).
-        if (typeof msg.rec === 'boolean') {
-          var appEl = document.getElementById('app');
-          var logoEl = document.getElementById('logo');
-          if (appEl) appEl.style.setProperty('--accent', msg.rec ? 'var(--hui-red)' : 'var(--hui-green)');
-          if (logoEl) logoEl.style.color = msg.rec ? 'var(--hui-red)' : 'var(--hui-green)';
-        }
-      }
-    };
-    ws.onclose = function(){
-      if (stopped) return;
-      setStatus(false, 'Disconnected -- reconnecting…');
-      setTimeout(connect, retryDelay);
-      retryDelay = Math.min(retryDelay * 1.5, 10000);
-    };
-    ws.onerror = function(){ try { ws.close(); } catch(e) {} };
-  }
-  connect();
+  // Escape is the fast way out of Broadcast even though the corner
+  // tab (dimmed to near-invisible in that mode -- see CSS) is always
+  // there too, since the whole point is nothing else is on screen.
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && document.body.classList.contains('broadcast-view')) applyViewMode('default');
+  });
+  var saved = 'default';
+  try { saved = localStorage.getItem('bgpromidi-view-mode') || 'default'; } catch(e) {}
+  applyViewMode(saved);
 }
 
-if (isViewerMode) {
-  initViewerMode();
-} else {
-  wireLiveShare();
-  buildSig(); render(); setPlay(true);
-}
+wireViews();
+buildSig(); render(); setPlay(true);
 })();
 </script>
 </body>
