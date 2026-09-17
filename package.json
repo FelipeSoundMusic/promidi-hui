@@ -1,0 +1,34 @@
+{
+  "name": "bg-promidi",
+  "version": "1.0.0",
+  "description": "BG·ProMIDI — HUI MIDI SysEx bar/beat, timecode and broadcast counter for Pro Tools",
+  "main": "main.js",
+  "author": "Felipe Gutierrez",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.britishgrovestudios.bgpromidi",
+    "productName": "BG-ProMIDI",
+    "files": [
+      "main.js",
+      "index.html",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "icon": "build/icon.png",
+      "identity": null,
+      "target": [
+        { "target": "dmg", "arch": ["arm64"] },
+        { "target": "zip", "arch": ["arm64"] }
+      ]
+    },
+    "directories": {
+      "output": "dist-electron"
+    }
+  }
+}
