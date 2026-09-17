@@ -149,13 +149,47 @@
     body.broadcast-view .custom-panel,
     body.broadcast-view .screw{display:none!important}
     body.broadcast-view .platebar{margin-bottom:0}
-    body.broadcast-view .rack{background:none;border:none;box-shadow:none;padding:0;zoom:1!important}
-    body.broadcast-view .ledwin{zoom:1!important;padding:56px 12px}
-    body.broadcast-view .cv,body.broadcast-view .csep{font-size:min(13vw,150px)!important}
-    body.broadcast-view .cbar{font-size:min(13vw,150px)!important}
-    body.broadcast-view .recband{margin-top:36px}
-    body.broadcast-view .recbox-val{font-size:30px}
-    body.broadcast-view .viewtabs{position:fixed;bottom:10px;right:14px;opacity:0.12;transition:opacity 0.15s;z-index:10}
+    /* #app's normal 860px max-width is a "rack unit" framing choice
+       for the default view -- broadcast has no side content competing
+       for space, so let it use the window it's actually given instead
+       (capped well above any realistic OBS crop, just as a backstop
+       against an absurd digit size on an ultrawide monitor). */
+    body.broadcast-view #app{max-width:1700px}
+    /* --bf is the one broadcast digit scale everything else derives
+       from via calc(), so the counter and its "|"/":" dividers always
+       grow together in fixed proportion -- unlike the mismatched,
+       independently-clamped vw() values this replaced (which is what
+       let digits overflow their columns and crowd the dividers at
+       normal window widths). The ratios match the default view's own
+       --w2/--w3/--w5/--wsep-to-font proportions, except --wsep gets
+       noticeably more room, which is the specific fix for "numbers
+       too close to the separator". Tuned so the worst case (Bars|Beat
+       with Ticks shown, the widest row the app ever lays out) doesn't
+       wrap at typical OBS window widths -- verified with screenshots
+       at 820/1280/1400px. */
+    body.broadcast-view .rack{
+      --bf:min(8vw,132px);
+      --w2:calc(var(--bf) * 1.3);
+      --w3:calc(var(--bf) * 1.9);
+      --w5:calc(var(--bf) * 3);
+      --wsep:calc(var(--bf) * 0.62);
+      background:none;border:none;box-shadow:none;padding:40px 28px;zoom:1!important
+    }
+    body.broadcast-view .ledwin{zoom:1!important;padding:40px 12px 34px}
+    body.broadcast-view .cv,body.broadcast-view .csep,body.broadcast-view .cbar{font-size:var(--bf)!important}
+    body.broadcast-view .cfl{font-size:13px;letter-spacing:2.5px;color:#4a5a4a}
+    body.broadcast-view .recband{margin-top:38px;justify-content:center}
+    body.broadcast-view .recgrid{gap:24px}
+    body.broadcast-view .recbox{padding:12px 30px}
+    body.broadcast-view .recbox-lbl{font-size:10px;letter-spacing:2.5px;margin-bottom:6px}
+    body.broadcast-view .recbox-val{font-size:42px}
+    /* Pinned to the rack itself (which is position:relative), not the
+       viewport -- a viewport-fixed corner can end up sitting right on
+       top of the start/stop boxes once everything else is hidden and
+       the window is sized close to the content, which is exactly what
+       happened before this fix. Top-right keeps it well clear of the
+       recgrid, which always sits at the bottom. */
+    body.broadcast-view .viewtabs{position:absolute;top:14px;right:16px;opacity:0.12;transition:opacity 0.15s;z-index:10}
     body.broadcast-view .viewtabs:hover{opacity:1}
 
     /* ── signal monitor : hidden by default ──────────────────── */
