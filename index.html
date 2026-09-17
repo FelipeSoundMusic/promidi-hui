@@ -182,17 +182,21 @@
       --bf:9.5vw;
       --w2:calc(var(--bf) * 1.3);
       --w3:calc(var(--bf) * 1.9);
-      /* Bars is sized wide enough for five digits so a long session
-         never overflows it (see the Round 3 fix), but that leaves
-         visible slack to the right of shorter bar numbers before the
-         "|" divider -- reading as too big a gap between Bars and
-         Beat. Trimmed a bit off that reserved width, proportionally
-         (as a fraction of --bf, not a flat px number) so the gap
-         tightens consistently at any window size without eating into
-         the safety margin a 5-digit bar count needs at small sizes --
-         a flat px trim was tried first and nearly touched a 5-digit
-         number's last digit against the divider on a narrow window. */
-      --w5:calc(var(--bf) * 4.28);
+      /* Bars needs to stay wide enough for five digits so a long
+         session never overflows it (Round 3), while sitting close
+         enough to Beat that the two don't read as unrelated fields
+         (Round 4). Earlier passes guessed at that width (4.6x, then
+         4.28x) and both guesses were still way too generous -- an
+         actual measurement of the rendered digit glyphs at this font
+         (M PLUS Rounded 1c 800, with its -0.01em letter-spacing) shows
+         five digits only ever need about 2.73x the font size, since
+         digits in this font are all the same fixed advance width
+         (bar "1" alone is narrower, so it's never the long pole). 3x
+         leaves a real but modest safety margin over that measured
+         number rather than a guessed one -- same ratio the default
+         (non-broadcast) view already uses for this same field, just
+         applied to --bf instead of the smaller default font size. */
+      --w5:calc(var(--bf) * 3);
       --wsep:calc(var(--bf) * 0.62);
       background:none;border:none;box-shadow:none;padding:40px 28px;zoom:1!important
     }
